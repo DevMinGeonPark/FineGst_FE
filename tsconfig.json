@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./app/*"],
+      "@/assets/*": ["./assets/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/hooks/*": ["./app/hooks/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/actions.json", "env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts", "app/_layout.androidtsx"]
+}

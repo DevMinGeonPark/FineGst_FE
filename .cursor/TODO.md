@@ -1,0 +1,23 @@
+- [x] login view
+- [x] register webview
+- [x] fixbar 조정
+- [x] Detail에서 색상 버튼 누르면 바꾸는 기능
+- [x] home btn
+- [x] point 연동 문제
+- [x] toggle bar
+- [x] modal
+- [x] webview 연결
+- [x] splash screen
+- [x] app Icon
+- [x] Register 기능
+- [x] 올리기전에 로그인 정상화 체크
+- [x] 최종시점에서 체크용 모달 제거(보는거)
+- [x] 이름이 안나오는 경우가 있음 header에 (e.g. 내 계정)
+- [x] notification 여부 => expo로의 변환에 대해 설명
+- [x] 속도 제어
+- [] android, ios의 키값을 잘 이용해서 올릴 수 잇게하기 (키값 확인)
+- [] android ios의 버전을 잘 체크해서 적용하기
+- [] android ios의 package name을 잘 적용하기
+- [] splash screen 확인
+- [] app icon 제대로 되었는지 확인
+- [] git username, git pass 바꿔서 내걸로

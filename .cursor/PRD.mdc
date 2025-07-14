@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 목표
+- 해당 앱의 목표는 기존의 react-native cli로 구성되었던 app을 react native expo app으로 마이그레이션하는 것
+
+# 기술
+- 기존 앱은 https://github.com/DevMinGeonPark/HwainjieseutiFE에 존재함
+- 신 버전 cli로 마이그레이션을 시도하던 앱은 ~/finegst/sibal/finegstApp/에 존재함
+
+# 개발 방향
+- 기존앱은 참고만하되 신버전 시도 하던걸 먼저 마이그레이션 시도
+
+# 규칙
+- 코드 개발에서 환경을 꼭 신경쓰고 개발
+-> 환경: mac os / node 20 / brew based watch / java 18
+- 반드시 의존성을 잊지말고 개발할 것
+- 아직 구현되지 않은 view들은 임시 주석해
