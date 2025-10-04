@@ -30,6 +30,7 @@ export default function Register() {
     if (IDInput) {
       IDInput.autocapitalize = "none";
     }
+      
 
     // 웹 요소의 최종 Height를 알아내기 위한 코드
     var lastHeight = document.documentElement.scrollHeight;
@@ -176,7 +177,7 @@ export default function Register() {
             injectedJavaScript={injectedJavaScriptOnLoad}
             scalesPageToFit={false}
             allowsInlineMediaPlayback
-            mixedContentMode="always"
+            mixedContentMode="always" // 역활: 외부 브라우저로 열리는 것을 방지하고 내부 WebView에서 처리
             domStorageEnabled={true}
             onMessage={handleOnMessage}
             setSupportMultipleWindows={false}

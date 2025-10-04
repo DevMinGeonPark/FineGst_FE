@@ -1,7 +1,7 @@
 {
   "name": "finegstapp",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "8.0.1",
   "scripts": {
     "start": "expo start --clear --tunnel",
     "reset-project": "node ./scripts/reset-project.js",

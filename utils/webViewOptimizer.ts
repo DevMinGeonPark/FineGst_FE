@@ -15,9 +15,45 @@ export const getWebViewOptimizedJavaScript = (): string => {
       window.ReactNativeWebView.postMessage("close");
     }
 
-    // 이미지 지연 로딩
+    // window.open 오버라이드 - 조건부 처리
+    const originalWindowOpen = window.open;
+    window.open = function(url, name, specs, replace) {
+      console.log('window.open 감지됨:', url, '현재 페이지:', window.location.href);
+      
+      // register_form.php에서만 원래 window.open 사용
+      const internalPages = [
+        'register_form.php'
+      ];
+      
+      const currentUrl = window.location.href;
+      const shouldUseInternal = internalPages.some(page => 
+        currentUrl.includes(page) || (url && url.includes(page))
+      );
+      
+      if (shouldUseInternal) {
+        console.log('register_form.php에서 window.open 호출 - 원래 기능 유지');
+        return originalWindowOpen.call(this, url, name, specs, replace);
+      }
+      
+      // 일반 페이지에서는 외부 브라우저로 리다이렉트
+      if (url) {
+        console.log('일반 페이지에서 window.open 호출 - 외부 브라우저로 리다이렉트');
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'openExternal',
+          url: url
+        }));
+      }
+      
+      // 내부에서는 새창을 열지 않음
+      return null;
+    };
+
+    // 이미지 지연 로딩 및 반응형 최적화
     document.querySelectorAll('img').forEach(img => {
       img.loading = 'lazy';
+      // 이미지가 컨테이너를 넘지 않도록 설정
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
     });
 
     // 불필요한 리소스 차단
@@ -26,6 +62,17 @@ export const getWebViewOptimizedJavaScript = (): string => {
       const scripts = document.querySelectorAll('script[src*="' + res + '"]');
       scripts.forEach(script => script.remove());
     });
+
+    var IDInput = document.getElementById('reg_mb_id');
+    if (IDInput) {
+      IDInput.autocapitalize = "none";
+    }
+    
+    var ipin = document.getElementById('win_ipin_cert');
+    if (ipin) {
+      ipin.style.display = 'none';
+    }
+
     true;
   `;
 };

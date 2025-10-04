@@ -2,7 +2,7 @@
   "expo": {
     "name": "(주) 화인지에스티",
     "slug": "finegstApp",
-    "version": "8.0.0",
+    "version": "9.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "finegstapp",
@@ -11,14 +11,15 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "shop.kt-online.www.finegstApp",
-      "buildNumber": "9",
+      "buildNumber": "12",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["kakaotalk", "kakaoplus", "kakaostory", "tel", "mailto", "http", "https"]
       }
     },
     "android": {
       "package": "com.finegst.mshop",
-      "versionCode": 22,
+      "versionCode": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
