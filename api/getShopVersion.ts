@@ -1,6 +1,7 @@
 import client from "./client";
 import { ShopVersion } from "../types/CommonTypes";
 import { Platform } from "react-native";
+import logger from "../utils/logger";
 
 export async function getShopVersion(): Promise<ShopVersion> {
   let reqPath = "shopversion.php";
@@ -10,6 +11,6 @@ export async function getShopVersion(): Promise<ShopVersion> {
     reqPath = "ios-shop-version.php";
   }
   const res = await client.post(reqPath, {});
-  console.log(reqPath, res.data);
+  logger.log(reqPath, res.data);
   return res.data;
 }

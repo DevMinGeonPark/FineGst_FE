@@ -19,7 +19,6 @@ export default function Detail() {
   const router = useRouter();
 
   const [plan, setPlan] = useState<string>(getDefaultRatePlanInfo().Vol);
-  const [planDesc, setPlanDesc] = useState<string[]>(getDefaultRatePlanInfo().desc);
   const [supType, setSupType] = useState<string>("Machine");
   const [installment, setInstallment] = useState<string>("24");
 
@@ -31,7 +30,7 @@ export default function Detail() {
     return () => {
       setShowFixBar(false);
     };
-  }, []);
+  }, [setShowFixBar]);
 
   useEffect(() => {
     const backAction = () => {

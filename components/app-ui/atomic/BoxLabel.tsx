@@ -17,7 +17,7 @@ export default function BoxLabel({ label, Rate, fontColor, fontWeight }: BoxLabe
         <Text style={{ fontWeight: "bold", fontSize: 17 }}>{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={{ fontSize: 17, color: fontColor, fontWeight: fontColor === "#d71826" ? "bold" : fontWeight }}>
-            {fontColor === "#d71826" && Rate != 0 ? "-" : ""}
+            {fontColor === "#d71826" && Rate !== 0 ? "-" : ""}
             {NumberPreprocesser(Rate)}
           </Text>
           <Text style={{ fontSize: 17, color: fontColor, fontWeight: fontColor === "#d71826" ? "bold" : fontWeight }}>원</Text>

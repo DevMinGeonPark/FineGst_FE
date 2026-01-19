@@ -20,7 +20,7 @@ export default function AppMain() {
     setShowToggleIcons(true); // main 페이지 진입 시
 
     return () => setShowToggleIcons(false); // 페이지 나갈 때
-  }, []);
+  }, [setShowToggleIcons]);
 
   return (
     <CommonLayout>

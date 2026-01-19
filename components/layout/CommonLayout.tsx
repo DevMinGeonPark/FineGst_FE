@@ -1,13 +1,12 @@
 import React from "react";
 // import { Box } from '@gluestack-ui/themed';
-import { FlatList, Pressable, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Footer from "../../components/app-ui/modules/footer";
 import Header from "../../components/app-ui/modules/header";
 import { LayoutOptions, useCommonLayout } from "./useCommonLayout";
 import FixBar from "../app-ui/modules/FixBar";
 import useFixBarStore from "../../store/fixBarStore";
-import { Ionicons } from "@expo/vector-icons";
 import useShowToggleIconsStore from "../../store/showToggleIconsStore";
 import ToggleIcons from "../app-ui/modules/toggleIcons";
 // import Footer from '../../components/app/atomic/Footer';

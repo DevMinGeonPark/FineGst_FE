@@ -1,5 +1,5 @@
 import { ENCRYPT_SECRET_KEY } from "@env";
-import cryptoJs from "crypto-js";
+import { AES, Utf8, Pkcs7, CBC } from "crypto-es";
 
 // 암호화
 export const encrypt = (text: string) => {
@@ -9,10 +9,10 @@ export const encrypt = (text: string) => {
   if (typeof ENCRYPT_SECRET_KEY !== "string" || !ENCRYPT_SECRET_KEY) {
     throw new Error("ENCRYPT_SECRET_KEY가 정의되지 않았습니다.");
   }
-  const cipher = cryptoJs.AES.encrypt(text, cryptoJs.enc.Utf8.parse(ENCRYPT_SECRET_KEY.substring(0, 32)), {
-    iv: cryptoJs.enc.Utf8.parse(""),
-    padding: cryptoJs.pad.Pkcs7,
-    mode: cryptoJs.mode.CBC,
+  const cipher = AES.encrypt(text, Utf8.parse(ENCRYPT_SECRET_KEY.substring(0, 32)), {
+    iv: Utf8.parse(""),
+    padding: Pkcs7,
+    mode: CBC,
   });
   return cipher.toString();
 };

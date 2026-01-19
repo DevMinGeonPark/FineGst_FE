@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ToggleIcons from "../app-ui/modules/toggleIcons";
@@ -9,10 +9,14 @@ import { usePopupModalState } from "../../hooks/usePopupModalState";
 import { CommonWebView } from "./CommonWebView";
 
 export default function WebMain() {
-  const { webViewRef, uri, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
+  const { webViewRef, uri, currentUrl, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
 
   const { modal, setModal, popupData, defaultPopupData } = usePopupModalState();
-  const [isToggleShow, setIsToggleShow] = useState<boolean>(true);
+
+  // it_id가 URL에 포함되면 토글 숨김 (상품 상세 페이지)
+  const isToggleShow = useMemo(() => {
+    return !currentUrl.includes("it_id=");
+  }, [currentUrl]);
 
   // 스플래시 화면 숨김 처리
   useEffect(() => {

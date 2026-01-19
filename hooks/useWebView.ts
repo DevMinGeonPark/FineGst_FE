@@ -2,11 +2,13 @@ import { useRef, useState, useEffect } from "react";
 import { BackHandler, Linking } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
 import { WEB_URL } from "@env";
+import logger from "../utils/logger";
 
 interface UseWebViewReturn {
   webViewRef: React.RefObject<WebView | null>;
   uri: string;
   setUri: (uri: string) => void;
+  currentUrl: string;
   canGoBack: boolean;
   handleUri: (url: string) => void;
   handleBackPress: () => boolean;
@@ -18,6 +20,7 @@ interface UseWebViewReturn {
 export const useWebView = (): UseWebViewReturn => {
   const webViewRef = useRef<WebView | null>(null);
   const [uri, setUri] = useState<string>(WEB_URL);
+  const [currentUrl, setCurrentUrl] = useState<string>(WEB_URL);
   const [canGoBack, setCanGoBack] = useState(false);
 
   const handleUri = (url: string) => {
@@ -36,23 +39,22 @@ export const useWebView = (): UseWebViewReturn => {
   const handleExternalBrowserAndRedirect = (url: string) => {
     Linking.openURL(url)
       .then(() => {
-        console.log("외부 브라우저에서 URL 열기 성공:", url);
         // 외부 브라우저가 성공적으로 열린 후 앱은 이전 페이지 또는 메인으로 돌아가기
         if (canGoBack && webViewRef.current) {
           webViewRef.current.goBack();
         } else {
-          // 이전 페이지가 없으면 메인 페이지로 이동
           handleUri(WEB_URL);
         }
       })
       .catch((err) => {
-        console.error("외부 브라우저로 링크 열기 실패:", err);
+        logger.error("외부 브라우저로 링크 열기 실패:", err);
       });
   };
 
   const onNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
-    console.log("WebView 현재 URL:", navState.url);
+    setCurrentUrl(navState.url);
+    logger.log("WebView 현재 URL:", navState.url);
   };
 
   const handleWebViewMessage = (event: { nativeEvent: { data: string } }) => {
@@ -69,19 +71,14 @@ export const useWebView = (): UseWebViewReturn => {
     try {
       const parsedData = JSON.parse(messageData);
       if (parsedData.type === "openExternal" && parsedData.url) {
-        console.log("웹페이지에서 새창 열기 요청:", parsedData.url);
         handleExternalBrowserAndRedirect(parsedData.url);
       }
     } catch (error) {
-      // JSON 파싱 실패 시 기존 문자열 메시지로 처리
-      console.log("WebView 메시지:", messageData);
+      // JSON 파싱 실패 시 무시
     }
   };
 
   const onShouldStartLoadWithRequest = (navState: WebViewNavigation): boolean => {
-    const { url } = navState;
-    console.log("WebView 요청 URL:", url);
-
     // 모든 요청을 내부 WebView에서 처리하도록 설정
     return true;
   };
@@ -96,6 +93,7 @@ export const useWebView = (): UseWebViewReturn => {
     webViewRef,
     uri,
     setUri,
+    currentUrl,
     canGoBack,
     handleUri,
     handleBackPress,

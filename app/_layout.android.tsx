@@ -7,7 +7,10 @@ import { compareVersions } from "../utils/versionChecker";
 import UpdateModal from "../components/app-ui/modules/UpdateModal";
 import NetworkErrorModal from "../components/app-ui/modules/NetworkErrorModal";
 import WebMainAndroid from "../components/web-ui/web-main.android";
-import { SplashScreen } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
+
+// 테스트용: true로 설정하면 네이티브 앱뷰로 진입 (iOS 심사용)
+const USE_APP_VIEW = true;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,8 +52,13 @@ function useAppInitialization() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 1. 버전 체크
+        // 1. 버전 체크 (5초 타임아웃 적용)
         const versionResult = await compareVersions();
+
+        // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
+        if (versionResult.isTimeout) {
+          return;
+        }
 
         if (versionResult.isNetworkError) {
           // 네트워크 에러 발생 시
@@ -63,8 +71,8 @@ function useAppInitialization() {
           setAppState((prev) => ({ ...prev, updateModal: true }));
           return;
         }
-      } catch (error) {
-        console.log("버전 체크 실패", error);
+      } catch {
+        // 버전 체크 실패 시 앱 정상 진입
       }
     };
 
@@ -90,10 +98,8 @@ function AppRenderer({ appState }: { appState: AppState }) {
   if (networkErrorModal) {
     return <NetworkErrorModal />;
   } else if (updateModal) {
-    // 업데이트 필요 시
     return <UpdateModal />;
   } else {
-    // 버전 체크 성공 시
     return <WebMainApp />;
   }
 }
@@ -105,9 +111,25 @@ export default function RootLayout() {
 
   const appState = useAppInitialization();
 
-  // 폰트 로딩과 스플래시 스크린이 모두 완료될 때까지 대기
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
   if (!loaded) {
     return null;
+  }
+
+  // 네이티브 앱뷰 모드: expo-router가 전체 네비게이션 관리
+  if (USE_APP_VIEW) {
+    return (
+      <SetupProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(app)" />
+        </Stack>
+      </SetupProvider>
+    );
   }
 
   return <AppRenderer appState={appState} />;

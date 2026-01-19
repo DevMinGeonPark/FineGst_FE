@@ -50,3 +50,6 @@ app-example
 
 
 key-setup/
+
+# Claude Code (spec-kit)
+.claude/

@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import useAuthStore from "../../../store/authStore";
-import { NumberPreprocesser } from "@/utils/NumberPreprocesser copy";
+import { NumberPreprocesser } from "@/utils/NumberPreprocesser";
 import AlertModal from "./AlertModal";
 
 function Header() {

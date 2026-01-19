@@ -1,7 +1,7 @@
 // Circles.tsx
 import React from "react";
 import { View } from "react-native";
-import Circle from "./Circle";
+import { Circle } from "./Circle";
 
 type CircleProps = {
   size: number;

@@ -19,11 +19,11 @@ function ProductList({ items }: ProductListProps) {
       <ProductCard
         MenuType={item.MenuType || "ca_id"}
         MenuVar={item.MenuVar || "20"}
-        CategorieCode={item.CategorieCode || "defulat"}
-        ItemCode={item.ItemCode || "defulat"}
-        ItemImgUrl={item.ItemImgUrl || "defulat"}
-        ItemName={item.ItemName || "defulat"}
-        ItemColor={item.ItemColor || "defulat"}
+        CategorieCode={item.CategorieCode || "default"}
+        ItemCode={item.ItemCode || "default"}
+        ItemImgUrl={item.ItemImgUrl || "default"}
+        ItemName={item.ItemName || "default"}
+        ItemColor={item.ItemColor || "default"}
         ItemChargeNormal={item.ItemChargeNormal || 0}
         ItemChargeSales={item.ItemChargeSales || 0}
         ItemDCRate={item.ItemDCRate || 0}

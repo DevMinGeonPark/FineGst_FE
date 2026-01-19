@@ -17,7 +17,7 @@ export default function Login() {
 
   useEffect(() => {
     setShowFixBar(false);
-  }, []);
+  }, [setShowFixBar]);
 
   return (
     <CommonLayout>
@@ -65,7 +65,6 @@ export default function Login() {
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() => {
-              console.log("press, login", id, password);
               login({ id, password });
             }}
             activeOpacity={0.8}

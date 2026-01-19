@@ -20,7 +20,7 @@ export default function FindInfo() {
 
   useEffect(() => {
     setShowFixBar(false);
-  }, []);
+  }, [setShowFixBar]);
 
   // 전화번호 입력시 숫자만 입력되도록 처리
   const onChangePhone = (text: string) => {

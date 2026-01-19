@@ -1,29 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Image, Pressable, View, Text } from "react-native";
 import { ItemList } from "../../../types/ProductTypes";
-// import Price from '@src/Atomic/ProductCard/Price';
-// import { useNavigation } from '@react-navigation/native';
-// import { StackNavigationProp } from '@react-navigation/stack';
-// import { StackScreenProps } from '@Types/NavigationTypes';
 import { useRouter } from "expo-router";
 import { useRoute } from "@react-navigation/native";
-import Circles from "./Circles";
+import { Circles } from "./Circles";
 import ToDetailButton from "../atomic/ToDetailButton";
-// import { useUserStore } from '@src/Store/userStore';
-// import SplashScreen from 'react-native-splash-screen';
 
 function ProductCard(data: ItemList) {
   const [color, setColor] = useState<string[]>([]);
   const [isPressed, setIsPressed] = useState<boolean>(false);
-  // const { hasUser } = useUserStore();
-  // const navigation = useNavigation<StackNavigationProp<StackScreenProps>>();
   const router = useRouter();
   const routeName = useRoute().name;
 
   useEffect(() => {
     const colors = data.ItemColor.match(/#[a-f0-9]{6}/g) || [];
     setColor(colors);
-    // SplashScreen.hide();
   }, [data.ItemColor]);
 
   useEffect(() => {

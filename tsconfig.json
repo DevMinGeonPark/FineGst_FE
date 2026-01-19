@@ -9,5 +9,5 @@
       "@/hooks/*": ["./app/hooks/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/actions.json", "env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts", "app/_layout.androidtsx"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/actions.json", "env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

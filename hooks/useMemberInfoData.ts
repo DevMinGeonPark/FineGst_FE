@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { getMemberInfo } from "../api/getMemberInfo";
 import { ParamProps } from "../types/axiosTypes";
 import useAuthStore from "../store/authStore";
+import logger from "../utils/logger";
 
 export default function useMemberInfoData(params: ParamProps) {
   const { user, login, isLoggedIn } = useAuthStore();
@@ -15,8 +16,7 @@ export default function useMemberInfoData(params: ParamProps) {
 
   useEffect(() => {
     if (query.data && query.isSuccess) {
-      console.log(`MemberInfoData 데이터 불러오기 성공\n${JSON.stringify(query.data, null, 2)}`);
-
+      logger.log("MemberInfoData 데이터 불러오기 성공");
       login({
         UserId: params.KTShopID,
         UserNm: user?.UserNm || query.data.UserNm || "",
@@ -27,8 +27,7 @@ export default function useMemberInfoData(params: ParamProps) {
 
   useEffect(() => {
     if (query.error) {
-      console.error(`MemberInfoData 데이터 불러오기 실패`);
-      console.error(query.error);
+      logger.error("MemberInfoData 데이터 불러오기 실패", query.error);
     }
   }, [query.error]);
 

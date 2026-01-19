@@ -1,16 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, SplashScreen } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { useState, useEffect } from "react";
 import { compareVersions } from "../utils/versionChecker";
-import { shouldShowWebMain } from "../api/shouldShowWebMain";
 import UpdateModal from "../components/app-ui/modules/UpdateModal";
 import NetworkErrorModal from "../components/app-ui/modules/NetworkErrorModal";
 import WebMainIos from "../components/web-ui/web-main.ios";
-import { View, StyleSheet } from "react-native";
+import { SplashScreen, Stack } from "expo-router";
+
+// 테스트용: true로 설정하면 네이티브 앱뷰로 진입 (iOS 심사용)
+const USE_APP_VIEW = true;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,7 +18,6 @@ SplashScreen.preventAutoHideAsync();
 interface AppState {
   updateModal: boolean;
   networkErrorModal: boolean;
-  ico: boolean;
 }
 
 interface SetupProviderProps {
@@ -48,32 +47,32 @@ function useAppInitialization() {
   const [appState, setAppState] = useState<AppState>({
     updateModal: false,
     networkErrorModal: false,
-    ico: true,
   });
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 1. 버전 체크
+        // 1. 버전 체크 (5초 타임아웃 적용)
         const versionResult = await compareVersions();
 
+        // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
+        if (versionResult.isTimeout) {
+          return;
+        }
+
         if (versionResult.isNetworkError) {
+          // 네트워크 에러 발생 시
           setAppState((prev) => ({ ...prev, networkErrorModal: true }));
           return;
         }
 
         if (versionResult.needsUpdate) {
+          // 업데이트 필요 시
           setAppState((prev) => ({ ...prev, updateModal: true }));
           return;
         }
-
-        // 2. ICO 값 가져오기
-        const icoValue = await shouldShowWebMain();
-        console.log("icoValue", icoValue);
-        setAppState((prev) => ({ ...prev, ico: icoValue }));
-      } catch (error) {
-        console.log("ICO 값을 가져오는 데 실패했습니다.", error);
-        setAppState((prev) => ({ ...prev, ico: false }));
+      } catch {
+        // 버전 체크 실패 시 앱 정상 진입
       }
     };
 
@@ -81,18 +80,6 @@ function useAppInitialization() {
   }, []);
 
   return appState;
-}
-
-// 메인 앱 컴포넌트
-function AppMainApp() {
-  return (
-    <SetupProvider>
-      <Stack screenOptions={{ headerShown: false }} initialRouteName="(app)">
-        <Stack.Screen name="(app)" />
-      </Stack>
-      <StatusBar style="auto" />
-    </SetupProvider>
-  );
 }
 
 // 웹 메인 컴포넌트
@@ -104,52 +91,46 @@ function WebMainApp() {
   );
 }
 
+// 조건부 렌더링 컴포넌트
+function AppRenderer({ appState }: { appState: AppState }) {
+  const { updateModal, networkErrorModal } = appState;
+
+  if (networkErrorModal) {
+    return <NetworkErrorModal />;
+  } else if (updateModal) {
+    return <UpdateModal />;
+  } else {
+    return <WebMainApp />;
+  }
+}
+
 export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   const appState = useAppInitialization();
-  const { updateModal, ico } = appState;
-
-  // 스플래시 스크린 제어용 상태
-  const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      setSplashVisible(false);
-      await SplashScreen.hideAsync();
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
 
-  // 폰트 로딩, 스플래시 스크린이 모두 완료될 때까지 대기
-  if (!loaded || splashVisible) {
+  if (!loaded) {
     return null;
   }
 
-  return (
-    <View style={{ flex: 1 }}>
-      <AppMainApp />
-      {/* updateModal이 true면 UpdateModal 오버레이 */}
-      {updateModal && (
-        <View style={styles.overlay} pointerEvents="box-none">
-          <UpdateModal />
-        </View>
-      )}
-      {/* !ico가 true면 WebMain 오버레이 */}
-      {!ico && !updateModal && (
-        <View style={styles.overlay} pointerEvents="box-none">
-          <WebMainApp />
-        </View>
-      )}
-    </View>
-  );
-}
+  // 네이티브 앱뷰 모드: expo-router가 전체 네비게이션 관리
+  if (USE_APP_VIEW) {
+    return (
+      <SetupProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(app)" />
+        </Stack>
+      </SetupProvider>
+    );
+  }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 10,
-  },
-});
+  return <AppRenderer appState={appState} />;
+}

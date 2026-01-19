@@ -14,7 +14,15 @@
       "buildNumber": "12",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["kakaotalk", "kakaoplus", "kakaostory", "tel", "mailto", "http", "https"]
+        "LSApplicationQueriesSchemes": [
+          "kakaotalk",
+          "kakaoplus",
+          "kakaostory",
+          "tel",
+          "mailto",
+          "http",
+          "https"
+        ]
       }
     },
     "android": {
@@ -48,7 +56,9 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

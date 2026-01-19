@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ToggleIcons from "../app-ui/modules/toggleIcons";
@@ -9,16 +9,17 @@ import { usePopupModalState } from "../../hooks/usePopupModalState";
 import { CommonWebView } from "./CommonWebView";
 
 export default function WebMain() {
-  const { webViewRef, uri, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
+  const { webViewRef, uri, currentUrl, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
 
   const { modal, closeModal, popupData, defaultPopupData } = usePopupModalState();
   const [webViewKey, setWebViewKey] = useState<number>(0);
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isToggleShow, setIsToggleShow] = useState<boolean>(true);
 
-  // 디버깅을 위한 로그 추가
-  console.log("팝업 모달 상태:", { modal, popupData, webViewLoaded, isLoading });
+  // it_id가 URL에 포함되면 토글 숨김 (상품 상세 페이지)
+  const isToggleShow = useMemo(() => {
+    return !currentUrl.includes("it_id=");
+  }, [currentUrl]);
 
   const onContentProcessDidTerminate = () => {
     webViewRef.current?.reload();
@@ -27,13 +28,6 @@ export default function WebMain() {
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
-
-  // 스플래시를 WebView가 완전히 로드된 후에만 숨김
-  useEffect(() => {
-    if (webViewLoaded && !isLoading) {
-      console.log("웹뷰 로딩 완료 - 스플래시 스크린 숨김");
-    }
-  }, [webViewLoaded, isLoading]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>

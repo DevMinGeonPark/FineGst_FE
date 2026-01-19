@@ -5,10 +5,43 @@
 export const getWebViewOptimizedJavaScript = (): string => {
   return `
     // 뷰포트 설정
-    const meta = document.createElement('meta'); 
-    meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0'); 
-    meta.setAttribute('name', 'viewport'); 
-    document.head.appendChild(meta);
+    const viewportContent = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0';
+    const existingViewport = document.querySelector('meta[name="viewport"]');
+    if (existingViewport) {
+      existingViewport.setAttribute('content', viewportContent);
+    } else {
+      const meta = document.createElement('meta');
+      meta.setAttribute('name', 'viewport');
+      meta.setAttribute('content', viewportContent);
+      document.head.appendChild(meta);
+    }
+
+    // 텍스트 자동 크기 조정 방지 (특정 Android 기기에서 높이 깨짐 방지)
+    if (!document.getElementById('rn-webview-text-size')) {
+      const textSizeStyle = document.createElement('style');
+      textSizeStyle.id = 'rn-webview-text-size';
+      textSizeStyle.textContent = 'html, body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }';
+      document.head.appendChild(textSizeStyle);
+    }
+
+    // 실제 뷰포트 높이 동기화 (폴더블/주소창 변화 대응)
+    function setAppHeight() {
+      var height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', height + 'px');
+    }
+    window.__setAppHeight = setAppHeight;
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setAppHeight);
+    }
+
+    if (!document.getElementById('rn-webview-height-fix')) {
+      const heightStyle = document.createElement('style');
+      heightStyle.id = 'rn-webview-height-fix';
+      heightStyle.textContent = 'html, body { height: 100%; min-height: 100%; } body { min-height: var(--app-height); }';
+      document.head.appendChild(heightStyle);
+    }
 
     // 창 닫기 핸들러
     window.close = function() {
@@ -18,42 +51,30 @@ export const getWebViewOptimizedJavaScript = (): string => {
     // window.open 오버라이드 - 조건부 처리
     const originalWindowOpen = window.open;
     window.open = function(url, name, specs, replace) {
-      console.log('window.open 감지됨:', url, '현재 페이지:', window.location.href);
-      
       // register_form.php에서만 원래 window.open 사용
-      const internalPages = [
-        'register_form.php'
-      ];
-      
+      const internalPages = ['register_form.php'];
       const currentUrl = window.location.href;
-      const shouldUseInternal = internalPages.some(page => 
+      const shouldUseInternal = internalPages.some(page =>
         currentUrl.includes(page) || (url && url.includes(page))
       );
-      
+
       if (shouldUseInternal) {
-        console.log('register_form.php에서 window.open 호출 - 원래 기능 유지');
         return originalWindowOpen.call(this, url, name, specs, replace);
       }
-      
+
       // 일반 페이지에서는 외부 브라우저로 리다이렉트
       if (url) {
-        console.log('일반 페이지에서 window.open 호출 - 외부 브라우저로 리다이렉트');
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'openExternal',
           url: url
         }));
       }
-      
-      // 내부에서는 새창을 열지 않음
       return null;
     };
 
-    // 이미지 지연 로딩 및 반응형 최적화
+    // 이미지 지연 로딩 설정 (스타일은 원본 유지)
     document.querySelectorAll('img').forEach(img => {
       img.loading = 'lazy';
-      // 이미지가 컨테이너를 넘지 않도록 설정
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
     });
 
     // 불필요한 리소스 차단

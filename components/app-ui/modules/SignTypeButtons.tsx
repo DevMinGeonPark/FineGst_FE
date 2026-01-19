@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 // import { HStack, Pressable, Box, Text } from '@gluestack-ui/themed';
 import { RegiType } from "../../../types/DetailTypes";
 import { View, Text, Pressable } from "react-native";
 
 type SignTypeButtonsProps = {
   regiTypes: RegiType[];
-  route: Readonly<object | undefined>;
+  route?: Readonly<object | undefined>;
 };
 
-export default function SignTypeButtons({ regiTypes, route }: SignTypeButtonsProps) {
+export default function SignTypeButtons({ regiTypes }: SignTypeButtonsProps) {
   const [selection, setSelection] = useState<number>(0);
 
   const subText = regiTypes.map((regiType) => regiType.ClickComment);

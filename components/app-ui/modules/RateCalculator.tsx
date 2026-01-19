@@ -36,7 +36,7 @@ export default function RateCalculator(Params: RateCalculatorProps) {
       ChgContractMonthTotal: data?.ChgContractMonthTotal,
       OrderPage: Params?.OrderPage,
     });
-  }, [data, Params?.OrderPage]);
+  }, [data, Params?.OrderPage, setFixBarProps]);
 
   return (
     <>

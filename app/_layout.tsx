@@ -1,10 +1,7 @@
 import { Platform } from "react-native";
+import LayoutAndroid from "./_layout.android";
+import LayoutIos from "./_layout.ios";
 
-let Layout;
-if (Platform.OS === "android") {
-  Layout = require("./_layout.android").default;
-} else {
-  Layout = require("./_layout.ios").default;
-}
+const Layout = Platform.OS === "android" ? LayoutAndroid : LayoutIos;
 
 export default Layout;

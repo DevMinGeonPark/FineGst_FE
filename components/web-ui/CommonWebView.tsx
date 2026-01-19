@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ActivityIndicator, Platform, Linking } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import { View, Text, TouchableOpacity, Platform, Linking, Dimensions, StyleSheet } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
 import { getWebViewOptimizedJavaScript } from "../../utils/webViewOptimizer";
 
@@ -21,6 +21,18 @@ interface CommonWebViewProps {
   setWebViewKey?: (key: number) => void;
 }
 
+// 에러 UI 컴포넌트
+const ErrorView: React.FC<{ onRetry: () => void; errorMessage?: string }> = ({ onRetry, errorMessage }) => (
+  <View style={styles.errorContainer}>
+    <Text style={styles.errorIcon}>!</Text>
+    <Text style={styles.errorTitle}>페이지를 불러올 수 없습니다</Text>
+    <Text style={styles.errorMessage}>{errorMessage || "네트워크 연결을 확인해주세요"}</Text>
+    <TouchableOpacity style={styles.retryButton} onPress={onRetry} activeOpacity={0.7}>
+      <Text style={styles.retryButtonText}>다시 시도</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 export const CommonWebView: React.FC<CommonWebViewProps> = ({
   webViewRef,
   uri,
@@ -38,7 +50,20 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   isLoading,
   setWebViewKey,
 }) => {
-  const optimizedJavaScript = getWebViewOptimizedJavaScript();
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  // JavaScript 캐싱
+  const optimizedJavaScript = useMemo(() => getWebViewOptimizedJavaScript(), []);
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", () => {
+      webViewRef.current?.injectJavaScript("window.__setAppHeight && window.__setAppHeight(); true;");
+    });
+    return () => {
+      subscription?.remove();
+    };
+  }, [webViewRef]);
 
   // 외부 링크 처리를 위한 JavaScript
   const externalLinkScript = `
@@ -115,54 +140,35 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
             kakaoAppUrl = `kakaotalk://plusfriend/home/${channelId}`;
           }
 
-          console.log(`${Platform.OS}에서 카카오톡 링크 처리:`, { originalUrl: url, channelId, kakaoAppUrl });
-
-          // 먼저 카카오톡 앱이 설치되어 있는지 확인
+          // 카카오톡 앱 설치 여부 확인 후 열기
           Linking.canOpenURL(Platform.OS === "ios" ? "kakaoplus://" : "kakaotalk://")
             .then((supported) => {
               if (supported) {
-                // 카카오톡 앱이 설치되어 있으면 앱으로 열기
-                console.log("카카오톡 앱으로 열기 시도:", kakaoAppUrl);
-                Linking.openURL(kakaoAppUrl).catch((err) => {
-                  console.log("카카오톡 앱 열기 실패, 대체 스킴 시도");
-                  // iOS에서 첫 번째 스킴이 실패하면 다른 스킴 시도
+                // 카카오톡 앱으로 열기
+                Linking.openURL(kakaoAppUrl).catch(() => {
+                  // 실패 시 대체 스킴 시도
                   const fallbackUrl = Platform.OS === "ios" ? `kakaotalk://plusfriend/home/${channelId}` : `kakaoplus://plusfriend/home/${channelId}`;
-
                   Linking.openURL(fallbackUrl).catch(() => {
-                    console.log("대체 스킴도 실패, 웹으로 시도");
-                    Linking.openURL(url).catch(() => {
-                      console.log("웹 브라우저 열기도 실패");
-                    });
+                    // 대체 스킴도 실패 시 웹으로
+                    Linking.openURL(url).catch(() => {});
                   });
                 });
               } else {
-                // 카카오톡 앱이 없으면 웹 브라우저에서 열기
-                console.log("카카오톡 앱 없음, 웹 브라우저로 열기:", url);
-                Linking.openURL(url).catch(() => {
-                  console.log("웹 브라우저 열기 실패");
-                });
+                // 카카오톡 앱이 없으면 웹 브라우저로
+                Linking.openURL(url).catch(() => {});
               }
             })
             .catch(() => {
-              // canOpenURL 체크 실패시 웹 브라우저로 열기
-              console.log("URL 체크 실패, 웹 브라우저로 시도:", url);
-              Linking.openURL(url).catch(() => {
-                console.log("웹 브라우저 열기 실패");
-              });
+              // canOpenURL 실패 시 웹 브라우저로
+              Linking.openURL(url).catch(() => {});
             });
         } else {
           // 일반 외부 링크 처리
-          Linking.openURL(url)
-            .then(() => {
-              console.log("외부 링크 열기 성공:", url);
-            })
-            .catch((err) => {
-              console.log("외부 링크 열기 실패:", url);
-            });
+          Linking.openURL(url).catch(() => {});
         }
         return;
       }
-    } catch (error) {
+    } catch {
       // JSON 파싱 실패 시 무시하고 원래 onMessage 호출
     }
 
@@ -200,7 +206,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
     injectedJavaScript: combinedJavaScript,
     onMessage: handleMessage,
     scalesPageToFit: false,
-    mixedContentMode: "always" as const,
+    mixedContentMode: "compatibility" as const,
     domStorageEnabled: true,
     setSupportMultipleWindows: false,
     allowsProtectedMedia: true,
@@ -225,41 +231,108 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
           allowsInlineMediaPlayback: undefined,
           originWhitelist: undefined,
           startInLoadingState: true,
+          textZoom: 100,
           userAgent: "Mozilla/5.0 (Linux; Android 12; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
           onContentProcessDidTerminate,
         };
 
+  // 다시 시도 핸들러
+  const handleRetry = () => {
+    setHasError(false);
+    setErrorMessage(undefined);
+    if (setWebViewKey && webViewKey !== undefined) {
+      setWebViewKey(webViewKey + 1);
+    } else {
+      webViewRef.current?.reload();
+    }
+  };
+
   const eventHandlers = {
     onHttpError: (syntheticEvent: any) => {
       const { nativeEvent } = syntheticEvent;
-      console.error("WebView HTTP Error: ", nativeEvent.statusCode, nativeEvent.description, nativeEvent.url);
+      // 4xx, 5xx 에러 시 에러 UI 표시
+      if (nativeEvent.statusCode >= 400) {
+        setHasError(true);
+        setErrorMessage(`서버 오류가 발생했습니다 (${nativeEvent.statusCode})`);
+      }
       onHttpError?.(syntheticEvent);
     },
     onError: (syntheticEvent: any) => {
       const { nativeEvent } = syntheticEvent;
+      setHasError(true);
+      // 에러 코드별 메시지 설정
       if (nativeEvent.code === -1009) {
-        if (setWebViewKey && webViewKey !== undefined) {
-          setWebViewKey(webViewKey + 1);
-        } else {
-          webViewRef.current?.reload();
-        }
+        setErrorMessage("인터넷 연결이 없습니다");
+      } else if (nativeEvent.code === -1001) {
+        setErrorMessage("요청 시간이 초과되었습니다");
+      } else {
+        setErrorMessage(nativeEvent.description || "페이지를 불러올 수 없습니다");
       }
-      console.error("WebView Error: ", nativeEvent.code, nativeEvent.description);
       onError?.(syntheticEvent);
     },
     onLoadStart: () => {
-      console.log("WebView 로딩 시작");
+      setHasError(false);
       onLoadStart?.();
     },
     onLoadEnd: () => {
-      console.log("WebView 로딩 완료");
       onLoadEnd?.();
     },
     onLoadProgress: ({ nativeEvent }: { nativeEvent: { progress: number } }) => {
-      console.log("[메인 WebView] onLoadProgress:", nativeEvent.progress);
       onLoadProgress?.({ nativeEvent });
     },
   };
 
+  // 에러 상태일 때 에러 UI 표시
+  if (hasError) {
+    return <ErrorView onRetry={handleRetry} errorMessage={errorMessage} />;
+  }
+
   return <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />;
 };
+
+// 스타일
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 20,
+  },
+  errorIcon: {
+    fontSize: 48,
+    fontWeight: "bold",
+    color: "#dc3545",
+    marginBottom: 16,
+    width: 64,
+    height: 64,
+    lineHeight: 64,
+    textAlign: "center",
+    borderRadius: 32,
+    borderWidth: 3,
+    borderColor: "#dc3545",
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#212529",
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: "#6c757d",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: "#007bff",
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

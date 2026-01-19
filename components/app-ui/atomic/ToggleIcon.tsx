@@ -1,4 +1,4 @@
-import { Image, ImageSourcePropType, Pressable, View } from "react-native";
+import { Image, ImageSourcePropType, Pressable } from "react-native";
 
 const ToggleIcon = ({ iconName, onPress }: { iconName: ImageSourcePropType | undefined; onPress: () => void }) => {
   return (
