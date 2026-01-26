@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "19260384022",
+    "project_id": "finegst-2a4ff",
+    "storage_bucket": "finegst-2a4ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19260384022:android:b913f8fbe3d4de94a86637",
+        "android_client_info": {
+          "package_name": "com.finegst.mshop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQo1nYxjteR70pb3fznfSqDzGKLScGMoQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

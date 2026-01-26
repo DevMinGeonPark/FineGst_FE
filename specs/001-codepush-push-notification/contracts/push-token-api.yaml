@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: Push Token API
+  description: 푸시 알림 토큰 관리를 위한 백엔드 API 명세
+  version: 1.0.0
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /api/push-tokens:
+    post:
+      summary: 푸시 토큰 등록
+      description: 새로운 푸시 토큰을 서버에 등록합니다.
+      operationId: registerPushToken
+      tags:
+        - Push Tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTokenRequest'
+      responses:
+        '201':
+          description: 토큰 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushTokenResponse'
+        '400':
+          description: 잘못된 요청 (유효하지 않은 토큰 형식)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 이미 등록된 토큰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushTokenResponse'
+
+  /api/push-tokens/{token}:
+    put:
+      summary: 푸시 토큰 업데이트
+      description: 기존 푸시 토큰의 사용자 ID 매핑을 업데이트합니다.
+      operationId: updatePushToken
+      tags:
+        - Push Tokens
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Expo Push Token
+          example: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTokenRequest'
+      responses:
+        '200':
+          description: 토큰 업데이트 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushTokenResponse'
+        '404':
+          description: 토큰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: 푸시 토큰 삭제
+      description: 푸시 토큰을 비활성화하거나 삭제합니다. (로그아웃 시 사용)
+      operationId: deletePushToken
+      tags:
+        - Push Tokens
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Expo Push Token
+          example: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+      responses:
+        '204':
+          description: 토큰 삭제 성공
+        '404':
+          description: 토큰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterTokenRequest:
+      type: object
+      required:
+        - token
+        - platform
+        - deviceId
+      properties:
+        token:
+          type: string
+          description: Expo Push Token
+          example: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+          pattern: "^ExponentPushToken\\[.+\\]$"
+        platform:
+          type: string
+          enum: [ios, android]
+          description: 디바이스 플랫폼
+        deviceId:
+          type: string
+          description: 디바이스 고유 식별자
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        userId:
+          type: string
+          nullable: true
+          description: 로그인된 사용자 ID (선택)
+          example: "user123"
+
+    UpdateTokenRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          nullable: true
+          description: 연결할 사용자 ID (null로 연결 해제)
+          example: "user123"
+
+    PushTokenResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 서버에서 생성된 토큰 ID
+          example: "pt_1234567890"
+        token:
+          type: string
+          description: Expo Push Token
+          example: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+        platform:
+          type: string
+          enum: [ios, android]
+        userId:
+          type: string
+          nullable: true
+        deviceId:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: 에러 코드
+          example: "INVALID_TOKEN_FORMAT"
+        message:
+          type: string
+          description: 에러 메시지
+          example: "Invalid Expo Push Token format"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Optional - 로그인된 사용자의 경우 토큰 인증
+
+security:
+  - BearerAuth: []
+  - {} # 비로그인 사용자도 토큰 등록 가능
