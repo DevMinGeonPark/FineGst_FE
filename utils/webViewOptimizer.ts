@@ -84,6 +84,17 @@ export const getWebViewOptimizedJavaScript = (): string => {
       scripts.forEach(script => script.remove());
     });
 
+    // 웹 팝업 제거 (앱 팝업 사용)
+    function removeHdPop() {
+      var hdPop = document.getElementById('hd_pop');
+      if (hdPop) hdPop.remove();
+    }
+    removeHdPop();
+
+    // 동적 생성되는 팝업 감시
+    const popObserver = new MutationObserver(removeHdPop);
+    popObserver.observe(document.body, { childList: true, subtree: true });
+
     var IDInput = document.getElementById('reg_mb_id');
     if (IDInput) {
       IDInput.autocapitalize = "none";

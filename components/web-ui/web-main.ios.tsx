@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ToggleIcons from "../app-ui/modules/toggleIcons";
@@ -13,13 +13,16 @@ export default function WebMain() {
 
   const { modal, setModal, popupData, defaultPopupData } = usePopupModalState();
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // it_id가 URL에 포함되면 토글 숨김 (상품 상세 페이지)
   const isToggleShow = useMemo(() => {
     return !currentUrl.includes("it_id=");
   }, [currentUrl]);
 
-  // 스플래시 화면 숨김 처리
-  useEffect(() => {
+  // WebView 로딩 완료 시 스플래시 숨김
+  const handleLoadEnd = useCallback(() => {
+    setIsLoading(false);
     SplashScreen.hideAsync();
   }, []);
 

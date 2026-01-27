@@ -33,6 +33,7 @@ interface AppState {
   updateModal: boolean;
   networkErrorModal: boolean;
   useAppView: boolean;
+  isLoading: boolean;
 }
 
 interface SetupProviderProps {
@@ -64,48 +65,54 @@ function useAppInitialization() {
   const [appState, setAppState] = useState<AppState>({
     updateModal: false,
     networkErrorModal: false,
-    useAppView: true, // 기본값: 앱뷰 (서버에서 false 받으면 웹뷰로 전환)
+    useAppView: true,
+    isLoading: true,
   });
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // 1. 버전 체크 (5초 타임아웃 적용)
-        const versionResult = await compareVersions();
+  const initializeApp = async () => {
+    try {
+      // 1. 버전 체크 (5초 타임아웃 적용)
+      const versionResult = await compareVersions();
 
-        // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
-        if (versionResult.isTimeout) {
-          // 타임아웃이어도 ico 값은 체크
-          const icoValue = await shouldShowWebMain();
-          setAppState((prev) => ({ ...prev, useAppView: icoValue }));
-          return;
-        }
-
-        if (versionResult.isNetworkError) {
-          // 네트워크 에러 발생 시
-          setAppState((prev) => ({ ...prev, networkErrorModal: true }));
-          return;
-        }
-
-        if (versionResult.needsUpdate) {
-          // 업데이트 필요 시
-          setAppState((prev) => ({ ...prev, updateModal: true }));
-          return;
-        }
-
-        // 2. ICO 값 가져오기 (앱뷰/웹뷰 결정)
+      // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
+      if (versionResult.isTimeout) {
+        // 타임아웃이어도 ico 값은 체크
         const icoValue = await shouldShowWebMain();
-        setAppState((prev) => ({ ...prev, useAppView: icoValue }));
-      } catch {
-        // 실패 시 앱뷰로 진입 (iOS 심사용)
-        setAppState((prev) => ({ ...prev, useAppView: true }));
+        setAppState({ updateModal: false, networkErrorModal: false, useAppView: icoValue, isLoading: false });
+        return;
       }
-    };
 
+      if (versionResult.isNetworkError) {
+        // 네트워크 에러 발생 시
+        setAppState((prev) => ({ ...prev, networkErrorModal: true }));
+        return;
+      }
+
+      if (versionResult.needsUpdate) {
+        // 업데이트 필요 시
+        setAppState((prev) => ({ ...prev, updateModal: true }));
+        return;
+      }
+
+      // 2. ICO 값 가져오기 (앱뷰/웹뷰 결정)
+      const icoValue = await shouldShowWebMain();
+      setAppState({ updateModal: false, networkErrorModal: false, useAppView: icoValue, isLoading: false });
+    } catch {
+      // 실패 시 앱뷰로 진입 (iOS 심사용)
+      setAppState({ updateModal: false, networkErrorModal: false, useAppView: true, isLoading: false });
+    }
+  };
+
+  useEffect(() => {
     initializeApp();
   }, []);
 
-  return appState;
+  const retry = () => {
+    setAppState({ updateModal: false, networkErrorModal: false, useAppView: true, isLoading: true });
+    initializeApp();
+  };
+
+  return { appState, retry };
 }
 
 // 네이티브 앱뷰 컴포넌트
@@ -133,8 +140,8 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  const appState = useAppInitialization();
-  const { updateModal, networkErrorModal, useAppView } = appState;
+  const { appState, retry } = useAppInitialization();
+  const { updateModal, networkErrorModal, useAppView, isLoading } = appState;
 
   // 푸시 알림 초기화: 권한 요청 및 토큰 생성
   useNotifications();
@@ -167,7 +174,7 @@ export default function RootLayout() {
 
   // 네트워크 에러 모달
   if (networkErrorModal) {
-    return <NetworkErrorModal />;
+    return <NetworkErrorModal onRetry={retry} />;
   }
 
   // 업데이트 모달
@@ -175,10 +182,15 @@ export default function RootLayout() {
     return <UpdateModal />;
   }
 
-  // 앱뷰/웹뷰 분기
-  if (useAppView) {
-    return <AppMainApp />;
-  }
-
-  return <WebMainApp />;
+  // 앱뷰/웹뷰 동시 렌더링 후 opacity로 전환
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={{ ...StyleSheet.absoluteFillObject, opacity: isLoading ? 0 : useAppView ? 1 : 0, zIndex: useAppView ? 1 : 0 }} pointerEvents={useAppView ? "auto" : "none"}>
+        <AppMainApp />
+      </View>
+      <View style={{ ...StyleSheet.absoluteFillObject, opacity: isLoading ? 0 : useAppView ? 0 : 1, zIndex: useAppView ? 0 : 1 }} pointerEvents={useAppView ? "none" : "auto"}>
+        <WebMainApp />
+      </View>
+    </View>
+  );
 }

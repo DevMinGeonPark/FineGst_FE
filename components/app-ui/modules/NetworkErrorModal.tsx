@@ -2,7 +2,11 @@ import React from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, BackHandler, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function NetworkErrorModal() {
+interface NetworkErrorModalProps {
+  onRetry?: () => void;
+}
+
+export default function NetworkErrorModal({ onRetry }: NetworkErrorModalProps) {
   const handleExitApp = () => {
     BackHandler.exitApp();
   };
@@ -25,6 +29,11 @@ export default function NetworkErrorModal() {
             <Text style={styles.title}>인터넷 연결을 확인한 후 다시 시도해 주세요.</Text>
           </View>
           <View style={styles.buttonRow}>
+            {onRetry && (
+              <TouchableOpacity style={[styles.button, styles.retryButton]} onPress={onRetry}>
+                <Text style={{ fontSize: 15, color: "white" }}>다시 시도</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={[styles.button, styles.exitButton]} onPress={handleExitApp}>
               <Text style={{ fontSize: 15, color: "black" }}>앱종료</Text>
             </TouchableOpacity>
@@ -74,6 +83,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 4,
+  },
+  retryButton: {
+    backgroundColor: "#007AFF",
   },
   exitButton: {
     backgroundColor: "#f0f0f0",
