@@ -65,8 +65,12 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
                 <Pressable
                   key={index}
                   onPress={() => {
+                    const url = item.GongLinkUrl;
                     onClose();
-                    handleUri(item.GongLinkUrl);
+                    // 모달 애니메이션 완료 후 페이지 이동
+                    setTimeout(() => {
+                      handleUri(url);
+                    }, 300);
                   }}
                 >
                   <Image source={{ uri: item.GongImgUrl }} style={styles.image} resizeMode="stretch" />

@@ -24,7 +24,13 @@ export const useWebView = (): UseWebViewReturn => {
   const [canGoBack, setCanGoBack] = useState(false);
 
   const handleUri = (url: string) => {
-    setUri(url.includes("?app_page=1") ? url : `${url}?app_page=1`);
+    if (url.includes("app_page=1")) {
+      setUri(url);
+    } else if (url.includes("?")) {
+      setUri(`${url}&app_page=1`);
+    } else {
+      setUri(`${url}?app_page=1`);
+    }
   };
 
   const handleBackPress = () => {

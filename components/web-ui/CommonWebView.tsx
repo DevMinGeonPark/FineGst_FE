@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, Platform, Linking, Dimensions, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Platform, Linking, Dimensions, StyleSheet, Modal, Pressable } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
+import Constants from "expo-constants";
 import { getWebViewOptimizedJavaScript } from "../../utils/webViewOptimizer";
+import { useAppUpdates } from "../../hooks/useAppUpdates";
 
 interface CommonWebViewProps {
   webViewRef: React.RefObject<WebView | null>;
@@ -52,6 +54,17 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
 }) => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+
+  // 업데이트 정보
+  const {
+    currentlyRunning,
+    isUpdateAvailable,
+    isUpdatePending,
+    isDownloading,
+    downloadProgress,
+    checkForUpdate,
+  } = useAppUpdates();
 
   // JavaScript 캐싱
   const optimizedJavaScript = useMemo(() => getWebViewOptimizedJavaScript(), []);
@@ -194,7 +207,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
           opacity: webViewLoaded && !isLoading ? 1 : 0,
         }),
     },
-    source: { uri: `${uri}?app_page=1` },
+    source: { uri },
     onNavigationStateChange,
     javaScriptEnabled: true,
     bounces: false,
@@ -287,7 +300,103 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
     return <ErrorView onRetry={handleRetry} errorMessage={errorMessage} />;
   }
 
-  return <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />;
+  const appVersion = Constants.expoConfig?.version || "1.0.0";
+  const updateId = currentlyRunning?.updateId;
+  const channel = currentlyRunning?.channel;
+  const runtimeVersion = currentlyRunning?.runtimeVersion;
+  const isEmbeddedLaunch = currentlyRunning?.isEmbeddedLaunch;
+  const isEmergencyLaunch = currentlyRunning?.isEmergencyLaunch;
+
+  const getUpdateStatus = () => {
+    if (isDownloading) return `다운로드 중 (${Math.round(downloadProgress * 100)}%)`;
+    if (isUpdatePending) return "대기 중 (재시작 시 적용)";
+    if (isUpdateAvailable) return "업데이트 있음";
+    return "최신 상태";
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />
+
+      {/* 버전 텍스트 (길게 누르면 디버그 패널) */}
+      <Pressable onLongPress={() => setShowDebugPanel(true)} delayLongPress={500}>
+        <Text style={styles.versionText}>v{appVersion}</Text>
+      </Pressable>
+
+      {/* 디버그 패널 모달 */}
+      <Modal
+        visible={showDebugPanel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDebugPanel(false)}
+      >
+        <Pressable style={styles.debugOverlay} onPress={() => setShowDebugPanel(false)}>
+          <View style={styles.debugPanel}>
+            <Text style={styles.debugTitle}>업데이트 정보</Text>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>앱 버전</Text>
+              <Text style={styles.debugValue}>{appVersion}</Text>
+            </View>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>업데이트 ID</Text>
+              <Text style={styles.debugValue} numberOfLines={1}>
+                {updateId ? updateId.slice(0, 8) + "..." : "없음 (번들)"}
+              </Text>
+            </View>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>채널</Text>
+              <Text style={styles.debugValue}>{channel || "없음"}</Text>
+            </View>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>런타임 버전</Text>
+              <Text style={styles.debugValue} numberOfLines={1}>
+                {runtimeVersion ? runtimeVersion.slice(0, 12) + "..." : "없음"}
+              </Text>
+            </View>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>상태</Text>
+              <Text style={[styles.debugValue, isUpdatePending && styles.debugPending]}>
+                {getUpdateStatus()}
+              </Text>
+            </View>
+
+            <View style={styles.debugRow}>
+              <Text style={styles.debugLabel}>번들 실행</Text>
+              <Text style={styles.debugValue}>{isEmbeddedLaunch ? "예" : "아니오"}</Text>
+            </View>
+
+            {isEmergencyLaunch && (
+              <View style={styles.debugRow}>
+                <Text style={[styles.debugLabel, { color: "#dc3545" }]}>긴급 실행</Text>
+                <Text style={[styles.debugValue, { color: "#dc3545" }]}>예</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.debugButton}
+              onPress={async () => {
+                await checkForUpdate();
+              }}
+            >
+              <Text style={styles.debugButtonText}>업데이트 확인</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.debugCloseButton}
+              onPress={() => setShowDebugPanel(false)}
+            >
+              <Text style={styles.debugCloseText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
 };
 
 // 스타일
@@ -334,5 +443,75 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  versionText: {
+    position: "absolute",
+    bottom: 4,
+    right: 8,
+    fontSize: 10,
+    color: "rgba(0, 0, 0, 0.2)",
+  },
+  debugOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  debugPanel: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    width: "85%",
+    maxWidth: 320,
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#212529",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  debugRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  debugLabel: {
+    fontSize: 13,
+    color: "#6c757d",
+  },
+  debugValue: {
+    fontSize: 13,
+    color: "#212529",
+    fontWeight: "500",
+    maxWidth: 160,
+    textAlign: "right",
+  },
+  debugPending: {
+    color: "#28a745",
+  },
+  debugButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  debugButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  debugCloseButton: {
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  debugCloseText: {
+    color: "#6c757d",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
