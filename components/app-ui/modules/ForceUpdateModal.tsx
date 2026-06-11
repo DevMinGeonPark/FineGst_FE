@@ -5,11 +5,9 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
-import { useUpdate } from "../../UpdateProvider";
-
-const { width } = Dimensions.get("window");
+import { useUpdate } from "../../UpdateContext";
 
 interface ForceUpdateModalProps {
   visible?: boolean;
@@ -21,6 +19,7 @@ interface ForceUpdateModalProps {
  * - 다운로드 완료 후 자동 재시작
  */
 export default function ForceUpdateModal({ visible }: ForceUpdateModalProps) {
+  const { width } = useWindowDimensions();
   const {
     isForceUpdateRequired,
     isDownloading,
@@ -52,7 +51,7 @@ export default function ForceUpdateModal({ visible }: ForceUpdateModalProps) {
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={[styles.container, { width: width * 0.85 }]}>
           <Text style={styles.title}>중요 업데이트</Text>
           <Text style={styles.description}>
             앱을 최신 버전으로 업데이트하고 있습니다.{"\n"}
@@ -92,7 +91,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: {
-    width: width * 0.85,
     backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 24,

@@ -35,7 +35,10 @@ export default function FindInfo() {
     }
 
     try {
-      const res = await axios.get(`https://kt-online.shop/bbs/password_lost_sms.php?mb_name=${name}&mb_hp=${phone}`);
+      // params 옵션 사용으로 한글 이름 등 사용자 입력을 안전하게 URL 인코딩 (axios 자동 인코딩)
+      const res = await axios.get("https://kt-online.shop/bbs/password_lost_sms.php", {
+        params: { mb_name: name, mb_hp: phone },
+      });
 
       const data: FindUserData = res.data;
       if (data.error === "0") {

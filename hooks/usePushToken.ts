@@ -19,7 +19,8 @@ export function usePushToken() {
   const { isLoggedIn, user } = useAuthStore();
 
   const previousTokenRef = useRef<string | null>(null);
-  const previousUserIdRef = useRef<string | null>(null);
+  // undefined = 아직 한 번도 동기화되지 않음 (첫 마운트 감지용 센티널)
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
 
   /**
    * 토큰이 이미 등록되었는지 확인

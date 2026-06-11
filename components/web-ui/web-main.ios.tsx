@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ToggleIcons from "../app-ui/modules/toggleIcons";
 import PopupModal from "../app-ui/modules/PopupModal";
-import { SplashScreen } from "expo-router";
 import { useWebView } from "../../hooks/useWebView";
 import { usePopupModalState } from "../../hooks/usePopupModalState";
 import { CommonWebView } from "./CommonWebView";
@@ -13,18 +12,10 @@ export default function WebMain() {
 
   const { modal, setModal, popupData, defaultPopupData } = usePopupModalState();
 
-  const [isLoading, setIsLoading] = useState(true);
-
   // it_id가 URL에 포함되면 토글 숨김 (상품 상세 페이지)
   const isToggleShow = useMemo(() => {
     return !currentUrl.includes("it_id=");
   }, [currentUrl]);
-
-  // WebView 로딩 완료 시 스플래시 숨김
-  const handleLoadEnd = useCallback(() => {
-    setIsLoading(false);
-    SplashScreen.hideAsync();
-  }, []);
 
   return (
     <SafeAreaView style={styles.container}>

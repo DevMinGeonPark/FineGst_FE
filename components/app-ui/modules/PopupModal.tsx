@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Modal, View, Image, StyleSheet, Dimensions, Pressable, Text, TouchableOpacity } from "react-native";
+import { Modal, View, Image, StyleSheet, useWindowDimensions, Pressable, Text, TouchableOpacity } from "react-native";
 import Carousel from "react-native-reanimated-carousel";
 import { GongContent } from "../../../types/processGongContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { logger } from "../../../utils/logger";
 
 interface PopupModalProps {
   visible: boolean;
@@ -12,23 +13,22 @@ interface PopupModalProps {
   handleUri: (url: string) => void;
 }
 
-const { width } = Dimensions.get("window");
-
 const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleUri }) => {
+  const { width } = useWindowDimensions();
   const [shouldShow, setShouldShow] = useState(true);
 
-  // 디버깅을 위한 로그 추가
-  console.log("PopupModal props:", { visible, shouldShow, dataLength: data?.length });
+  // 디버깅을 위한 로그 추가 (개발 환경에서만 출력)
+  logger.log("PopupModal props:", { visible, shouldShow, dataLength: data?.length });
 
   useEffect(() => {
     async function checkPopupTime() {
       const lastClosed = await AsyncStorage.getItem("popupModalLastClosed");
-      console.log("마지막 닫힌 시간:", lastClosed);
+      logger.log("마지막 닫힌 시간:", lastClosed);
       if (lastClosed) {
         const last = parseInt(lastClosed, 10);
         const now = Date.now();
         const timeDiff = now - last;
-        console.log("시간 차이 (밀리초):", timeDiff, "24시간:", 24 * 60 * 60 * 1000);
+        logger.log("시간 차이 (밀리초):", timeDiff, "24시간:", 24 * 60 * 60 * 1000);
         if (timeDiff < 24 * 60 * 60 * 1000) {
           setShouldShow(false);
         } else {
@@ -52,7 +52,7 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { width: width * 0.95 }]}>
           <View style={styles.carouselWrapper}>
             <Carousel
               loop
@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    width: width * 0.95,
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#000",

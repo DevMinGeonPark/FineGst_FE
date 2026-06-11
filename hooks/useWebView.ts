@@ -7,7 +7,6 @@ import logger from "../utils/logger";
 interface UseWebViewReturn {
   webViewRef: React.RefObject<WebView | null>;
   uri: string;
-  setUri: (uri: string) => void;
   currentUrl: string;
   canGoBack: boolean;
   handleUri: (url: string) => void;
@@ -98,7 +97,6 @@ export const useWebView = (): UseWebViewReturn => {
   return {
     webViewRef,
     uri,
-    setUri,
     currentUrl,
     canGoBack,
     handleUri,

@@ -1,5 +1,5 @@
 import React from "react";
-import { ParamProps, isProductData } from "../../../types/ProductTypes";
+import { ItemList, ParamProps, isProductData } from "../../../types/ProductTypes";
 import ProductCard from "../../app-ui/atomic/ProductCard";
 import useProductData from "../../../hooks/useProductData";
 import { FlatList, View } from "react-native";
@@ -19,7 +19,7 @@ const ProductPiece = ({ MenuType, MenuVar }: ProductPieceProps) => {
 
   const { data } = useProductData(params);
 
-  const renderItem = ({ item }: { item: any }) => (
+  const renderItem = ({ item }: { item: ItemList }) => (
     <View
       style={{
         width: "48%",

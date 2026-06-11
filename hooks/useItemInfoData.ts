@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ItemDetail, ParamProps } from "../types/DetailTypes";
 import { getItemInfo } from "../api/getItemInfo";
+import logger from "../utils/logger";
 // import { useUserStore } from '@src/Store/userStore';
 
 export default function useItemInfoData(params: ParamProps) {
@@ -14,12 +15,12 @@ export default function useItemInfoData(params: ParamProps) {
 
   // 쿼리 상태에 따른 로깅
   if (query.isSuccess) {
-    console.log(`ItemInfoData 데이터 불러오기 성공 `);
+    logger.log(`ItemInfoData 데이터 불러오기 성공 `);
   }
 
   if (query.isError) {
-    console.log(`ItemInfoData 데이터 불러오기 실패`);
-    console.log(query.error);
+    logger.error(`ItemInfoData 데이터 불러오기 실패`);
+    logger.error(query.error);
   }
 
   return query;

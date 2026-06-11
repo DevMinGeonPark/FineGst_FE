@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Image, Pressable, View, Text } from "react-native";
 import { ItemList } from "../../../types/ProductTypes";
-import { useRouter } from "expo-router";
-import { useRoute } from "@react-navigation/native";
+import { useRouter, useRoute } from "expo-router";
 import { Circles } from "./Circles";
 import ToDetailButton from "../atomic/ToDetailButton";
 
@@ -14,10 +13,14 @@ function ProductCard(data: ItemList) {
 
   useEffect(() => {
     const colors = data.ItemColor.match(/#[a-f0-9]{6}/g) || [];
+    // 기존 패턴 유지 (SDK 56 업그레이드에서 동작 변경 금지 — 추후 useMemo 파생값으로 리팩터링 대상)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setColor(colors);
   }, [data.ItemColor]);
 
   useEffect(() => {
+    // 라우트 변경 시 눌림 상태 초기화 — 기존 패턴 유지 (동작 변경 금지)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsPressed(false);
   }, [routeName]);
 

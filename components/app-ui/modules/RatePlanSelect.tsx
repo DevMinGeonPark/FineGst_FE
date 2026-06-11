@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface RatePlan {
   Vol: string;
@@ -20,13 +21,13 @@ interface RatePlanSelectProps {
 }
 
 export default function RatePlanSelect({ data, onSelect, selectedValue, placeholder = "요금제를 선택하세요" }: RatePlanSelectProps) {
-  data = data.flat(2);
+  const rateGroups = data.flat(2);
 
   const [modalVisible, setModalVisible] = useState(false);
 
   const getSelectedPlanName = () => {
     if (!selectedValue) return placeholder;
-    for (const group of data) {
+    for (const group of rateGroups) {
       if (group?.SubList) {
         const foundPlan = group.SubList.find((plan: RatePlan) => plan.Vol === selectedValue);
         if (foundPlan) return foundPlan.Var;
@@ -64,7 +65,7 @@ export default function RatePlanSelect({ data, onSelect, selectedValue, placehol
               </TouchableOpacity>
             </View>
             <ScrollView>
-              {data.map((group: RateGroup, groupIndex: number) => (
+              {rateGroups.map((group: RateGroup, groupIndex: number) => (
                 <View key={groupIndex}>
                   <Text style={styles.groupTitle}>{group.RateDivi}</Text>
                   {(group.SubList || []).map((item: RatePlan, itemIndex: number) =>

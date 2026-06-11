@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Platform, Linking, Dimensions, StyleSheet, Modal, Pressable } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
+import type { WebViewErrorEvent, WebViewHttpErrorEvent } from "react-native-webview/lib/WebViewTypes";
 import Constants from "expo-constants";
 import { getWebViewOptimizedJavaScript } from "../../utils/webViewOptimizer";
-import { useAppUpdates } from "../../hooks/useAppUpdates";
+import { useUpdate } from "../UpdateContext";
 
 interface CommonWebViewProps {
   webViewRef: React.RefObject<WebView | null>;
@@ -12,8 +13,8 @@ interface CommonWebViewProps {
   onMessage: (event: { nativeEvent: { data: string } }) => void;
   onShouldStartLoadWithRequest?: (navState: WebViewNavigation) => boolean;
   onContentProcessDidTerminate?: () => void;
-  onHttpError?: (syntheticEvent: any) => void;
-  onError?: (syntheticEvent: any) => void;
+  onHttpError?: (syntheticEvent: WebViewHttpErrorEvent) => void;
+  onError?: (syntheticEvent: WebViewErrorEvent) => void;
   onLoadStart?: () => void;
   onLoadEnd?: () => void;
   onLoadProgress?: ({ nativeEvent }: { nativeEvent: { progress: number } }) => void;
@@ -56,7 +57,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
-  // 업데이트 정보
+  // 업데이트 정보 (UpdateProvider context 소비 — useAppUpdates 다중 인스턴스 방지)
   const {
     currentlyRunning,
     isUpdateAvailable,
@@ -64,7 +65,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
     isDownloading,
     downloadProgress,
     checkForUpdate,
-  } = useAppUpdates();
+  } = useUpdate();
 
   // JavaScript 캐싱
   const optimizedJavaScript = useMemo(() => getWebViewOptimizedJavaScript(), []);
@@ -101,6 +102,12 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
             );
           
           if (isExternalLink) {
+            // 동일 링크에 리스너 중복 부착 방지 (MutationObserver 재실행 대응)
+            if (link.dataset.rnExternalHandled === 'true') {
+              return;
+            }
+            link.dataset.rnExternalHandled = 'true';
+
             link.addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
@@ -261,7 +268,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   };
 
   const eventHandlers = {
-    onHttpError: (syntheticEvent: any) => {
+    onHttpError: (syntheticEvent: WebViewHttpErrorEvent) => {
       const { nativeEvent } = syntheticEvent;
       // 4xx, 5xx 에러 시 에러 UI 표시
       if (nativeEvent.statusCode >= 400) {
@@ -270,7 +277,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
       }
       onHttpError?.(syntheticEvent);
     },
-    onError: (syntheticEvent: any) => {
+    onError: (syntheticEvent: WebViewErrorEvent) => {
       const { nativeEvent } = syntheticEvent;
       setHasError(true);
       // 에러 코드별 메시지 설정

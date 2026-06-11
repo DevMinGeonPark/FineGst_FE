@@ -4,7 +4,7 @@ import { usePushToken } from "../../hooks/usePushToken";
 
 export default function AppLayout() {
   // 푸시 알림 초기화 (권한 요청, 토큰 생성, 리스너 설정)
-  const { expoPushToken } = useNotifications();
+  useNotifications();
 
   // 푸시 토큰 서버 등록 (Supabase)
   usePushToken();

@@ -111,22 +111,6 @@ export async function registerForPushNotificationsAsync(
 }
 
 /**
- * 네이티브 디바이스 토큰 획득 (FCM/APNs 직접 연동용)
- * @returns 네이티브 푸시 토큰 또는 null
- */
-export async function getNativeDeviceToken(): Promise<string | null> {
-  if (!Device.isDevice) return null;
-
-  try {
-    const { data } = await Notifications.getDevicePushTokenAsync();
-    return data;
-  } catch (error) {
-    logger.log("Error getting native device token:", error);
-    return null;
-  }
-}
-
-/**
  * 푸시 알림의 딥링크 URL 추출
  */
 export function extractDeepLinkUrl(data: NotificationData): string | null {

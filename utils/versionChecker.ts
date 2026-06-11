@@ -88,12 +88,3 @@ export async function compareVersions(): Promise<VersionCheckResult> {
     needsUpdate,
   };
 }
-
-/**
- * 버전 문자열에서 메이저 버전을 추출하는 유틸리티 함수
- * @param version 버전 문자열 (예: "5.0.15")
- * @returns 메이저 버전 (예: "5")
- */
-export function extractMajorVersion(version: string): string {
-  return version.split(".")[0];
-}
