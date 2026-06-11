@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Modal, View, Image, StyleSheet, useWindowDimensions, Pressable, Text, TouchableOpacity } from "react-native";
-import Carousel from "react-native-reanimated-carousel";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { FlatList, Modal, View, Image, StyleSheet, useWindowDimensions, Pressable, Text, TouchableOpacity } from "react-native";
 import { GongContent } from "../../../types/processGongContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "../../../utils/logger";
+
+const AUTO_PLAY_INTERVAL = 3000;
 
 interface PopupModalProps {
   visible: boolean;
@@ -16,6 +17,12 @@ interface PopupModalProps {
 const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleUri }) => {
   const { width } = useWindowDimensions();
   const [shouldShow, setShouldShow] = useState(true);
+  const listRef = useRef<FlatList<GongContent>>(null);
+  const indexRef = useRef(0);
+
+  const pageWidth = width * 0.95;
+  const pageHeight = pageWidth * 1.1;
+  const itemCount = data?.length ?? 0;
 
   // 디버깅을 위한 로그 추가 (개발 환경에서만 출력)
   logger.log("PopupModal props:", { visible, shouldShow, dataLength: data?.length });
@@ -41,29 +48,49 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
     checkPopupTime();
   }, [visible]);
 
+  // 자동 넘김 (이미지가 2장 이상일 때만)
+  const active = visible && shouldShow && itemCount > 1;
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => {
+      indexRef.current = (indexRef.current + 1) % itemCount;
+      listRef.current?.scrollToIndex({ index: indexRef.current, animated: true });
+    }, AUTO_PLAY_INTERVAL);
+    return () => clearInterval(timer);
+  }, [active, itemCount]);
+
+  const onMomentumScrollEnd = useCallback(
+    (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+      const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
+      indexRef.current = Math.max(0, Math.min(index, itemCount - 1));
+    },
+    [pageWidth, itemCount]
+  );
+
   const handleDontShow = async () => {
     await AsyncStorage.setItem("popupModalLastClosed", Date.now().toString());
     setShouldShow(false);
     if (onClose) onClose();
   };
 
-  if (!visible || !shouldShow) return null;
+  if (!visible || !shouldShow || itemCount === 0) return null;
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modalContainer, { width: width * 0.95 }]}>
-          <View style={styles.carouselWrapper}>
-            <Carousel
-              loop
-              width={width * 0.95}
-              height={width * 0.95 * 1.1} // 이미지 비율에 맞게 높이 조정
-              autoPlay={true}
-              data={data || []}
-              scrollAnimationDuration={1000}
-              renderItem={({ item, index }) => (
+        <View style={[styles.modalContainer, { width: pageWidth }]}>
+          <View style={{ width: pageWidth, height: pageHeight }}>
+            <FlatList
+              ref={listRef}
+              data={data}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => String(index)}
+              getItemLayout={(_, index) => ({ length: pageWidth, offset: pageWidth * index, index })}
+              onMomentumScrollEnd={onMomentumScrollEnd}
+              renderItem={({ item }) => (
                 <Pressable
-                  key={index}
                   onPress={() => {
                     const url = item.GongLinkUrl;
                     onClose();
@@ -73,7 +100,7 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
                     }, 300);
                   }}
                 >
-                  <Image source={{ uri: item.GongImgUrl }} style={styles.image} resizeMode="stretch" />
+                  <Image source={{ uri: item.GongImgUrl }} style={{ width: pageWidth, height: pageHeight }} resizeMode="stretch" />
                 </Pressable>
               )}
             />
@@ -104,13 +131,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#000",
-  },
-  carouselWrapper: {
-    // Carousel will determine the height
-  },
-  image: {
-    width: "100%",
-    height: "100%",
   },
   footer: {
     flexDirection: "row",
