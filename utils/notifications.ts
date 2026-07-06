@@ -51,7 +51,7 @@ export async function registerForPushNotificationsAsync(
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#FF231F7C",
-        sound: "default",
+        // sound 생략 시 시스템 기본 알림음 사용 — 문자열을 주면 res/raw 커스텀 파일로 취급되어 무음 채널이 됨
       });
       logger.log("Android notification channel created");
     } catch (error) {
