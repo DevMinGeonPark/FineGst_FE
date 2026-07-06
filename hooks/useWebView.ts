@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { BackHandler, Linking } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
 import { WEB_URL } from "@env";
@@ -22,8 +22,22 @@ export const useWebView = (): UseWebViewReturn => {
   const [currentUrl, setCurrentUrl] = useState<string>(WEB_URL);
   const [canGoBack, setCanGoBack] = useState(false);
 
-  // app_page=1 파라미터 부착 제거 (BE 측 ?app_page1 깨짐 이슈) — setUri 자체가 안정 참조라 useCallback 불필요
-  const handleUri = setUri;
+  // source prop에 마지막으로 넘긴 uri 추적
+  const uriRef = useRef(uri);
+
+  // app_page=1 파라미터 부착은 제거됨 (BE 측 ?app_page1 깨짐 이슈)
+  const handleUri = useCallback(
+    (url: string) => {
+      if (uriRef.current === url) {
+        // source prop이 동일하면 state 변경이 없어 WebView가 재이동하지 않으므로 직접 이동 지시
+        webViewRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(url)}; true;`);
+        return;
+      }
+      uriRef.current = url;
+      setUri(url);
+    },
+    []
+  );
 
   const handleBackPress = () => {
     if (canGoBack && webViewRef.current) {
