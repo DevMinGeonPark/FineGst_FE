@@ -129,13 +129,19 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
             link.dataset.rnExternalHandled = 'true';
 
             link.addEventListener('click', function(e) {
+              // 리스너 부착 이후 페이지 JS가 href를 바꿔치기할 수 있으므로 클릭 시점의 href 사용
+              var currentHref = link.href || href;
+
+              // 같은 사이트로 바뀐 경우 WebView 기본 내비게이션에 맡김
+              if (isSameSite(currentHref)) return;
+
               e.preventDefault();
               e.stopPropagation();
-              
+
               // React Native로 메시지 전송
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'EXTERNAL_LINK',
-                url: href
+                url: currentHref
               }));
             });
           }
