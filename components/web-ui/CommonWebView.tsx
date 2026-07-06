@@ -82,15 +82,35 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   // 외부 링크 처리를 위한 JavaScript
   const externalLinkScript = `
     (function() {
+      // www 유무를 무시한 동일 사이트 판별 (배너 링크가 www 없는 kt-online.shop으로 걸려 있어
+      // 단순 hostname includes 비교로는 외부 링크로 오판됨)
+      function isSameSite(href) {
+        try {
+          const u = new URL(href, window.location.href);
+          if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+          const norm = function(h) { return h.replace(/^www\\./, ''); };
+          return norm(u.hostname) === norm(window.location.hostname);
+        } catch (e) {
+          return false;
+        }
+      }
+
       function handleExternalLinks() {
         const links = document.querySelectorAll('a[href]');
         links.forEach(link => {
           const href = link.getAttribute('href');
           const target = link.getAttribute('target');
-          
+
+          const sameSite = href && isSameSite(href);
+
+          // 동일 사이트인데 target=_blank면 WebView 내에서 열리도록 강제
+          if (sameSite && target === '_blank') {
+            link.setAttribute('target', '_self');
+          }
+
           // 외부 링크 판별
-          const isExternalLink = 
-            href && (
+          const isExternalLink =
+            href && !sameSite && (
               href.includes('pf.kakao.com') ||
               href.includes('kakaotalk://') ||
               href.includes('tel:') ||
@@ -98,9 +118,9 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
               href.includes('maps.app.goo.gl') ||
               href.includes('naver.me') ||
               target === '_blank' ||
-              (href.startsWith('http') && !href.includes(window.location.hostname))
+              href.startsWith('http')
             );
-          
+
           if (isExternalLink) {
             // 동일 링크에 리스너 중복 부착 방지 (MutationObserver 재실행 대응)
             if (link.dataset.rnExternalHandled === 'true') {
