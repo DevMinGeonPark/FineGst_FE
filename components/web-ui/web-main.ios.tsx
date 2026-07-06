@@ -10,7 +10,7 @@ import { CommonWebView } from "./CommonWebView";
 export default function WebMain() {
   const { webViewRef, uri, currentUrl, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
 
-  const { modal, setModal, popupData, defaultPopupData } = usePopupModalState();
+  const { modal, closeModal, popupData, defaultPopupData } = usePopupModalState();
 
   // it_id가 URL에 포함되면 토글 숨김 (상품 상세 페이지)
   const isToggleShow = useMemo(() => {
@@ -29,7 +29,7 @@ export default function WebMain() {
         />
       </View>
 
-      <PopupModal visible={modal} onClose={() => setModal(false)} showCloseButton={true} handleUri={handleUri} data={popupData || defaultPopupData} />
+      <PopupModal visible={modal} onClose={closeModal} showCloseButton={true} handleUri={handleUri} data={popupData || defaultPopupData} />
 
       {isToggleShow && <ToggleIcons />}
     </SafeAreaView>

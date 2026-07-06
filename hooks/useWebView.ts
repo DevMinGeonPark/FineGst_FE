@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { BackHandler, Linking } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
 import { WEB_URL } from "@env";
@@ -22,7 +22,7 @@ export const useWebView = (): UseWebViewReturn => {
   const [currentUrl, setCurrentUrl] = useState<string>(WEB_URL);
   const [canGoBack, setCanGoBack] = useState(false);
 
-  const handleUri = (url: string) => {
+  const handleUri = useCallback((url: string) => {
     if (url.includes("app_page=1")) {
       setUri(url);
     } else if (url.includes("?")) {
@@ -30,7 +30,7 @@ export const useWebView = (): UseWebViewReturn => {
     } else {
       setUri(`${url}?app_page=1`);
     }
-  };
+  }, []);
 
   const handleBackPress = () => {
     if (canGoBack && webViewRef.current) {

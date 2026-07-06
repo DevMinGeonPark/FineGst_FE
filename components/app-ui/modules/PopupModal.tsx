@@ -28,8 +28,10 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
   logger.log("PopupModal props:", { visible, shouldShow, dataLength: data?.length });
 
   useEffect(() => {
+    let cancelled = false;
     async function checkPopupTime() {
       const lastClosed = await AsyncStorage.getItem("popupModalLastClosed");
+      if (cancelled) return;
       logger.log("마지막 닫힌 시간:", lastClosed);
       if (lastClosed) {
         const last = parseInt(lastClosed, 10);
@@ -46,6 +48,9 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
       }
     }
     checkPopupTime();
+    return () => {
+      cancelled = true;
+    };
   }, [visible]);
 
   // 자동 넘김 (이미지가 2장 이상일 때만)
@@ -161,4 +166,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PopupModal;
+export default React.memo(PopupModal);
