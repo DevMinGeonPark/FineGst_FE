@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { BackHandler, Linking } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
 import { WEB_URL } from "@env";
@@ -22,15 +22,8 @@ export const useWebView = (): UseWebViewReturn => {
   const [currentUrl, setCurrentUrl] = useState<string>(WEB_URL);
   const [canGoBack, setCanGoBack] = useState(false);
 
-  const handleUri = useCallback((url: string) => {
-    if (url.includes("app_page=1")) {
-      setUri(url);
-    } else if (url.includes("?")) {
-      setUri(`${url}&app_page=1`);
-    } else {
-      setUri(`${url}?app_page=1`);
-    }
-  }, []);
+  // app_page=1 파라미터 부착 제거 (BE 측 ?app_page1 깨짐 이슈) — setUri 자체가 안정 참조라 useCallback 불필요
+  const handleUri = setUri;
 
   const handleBackPress = () => {
     if (canGoBack && webViewRef.current) {
