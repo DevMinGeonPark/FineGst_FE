@@ -16,7 +16,9 @@ interface PopupModalProps {
 
 const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleUri }) => {
   const { width } = useWindowDimensions();
-  const [shouldShow, setShouldShow] = useState(true);
+  // 24시간 억제 체크(AsyncStorage)가 끝나기 전 팝업이 한 프레임 노출되지 않도록 false로 시작
+  const [shouldShow, setShouldShow] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const listRef = useRef<FlatList<GongContent>>(null);
   const indexRef = useRef(0);
 
@@ -53,8 +55,8 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
     };
   }, [visible]);
 
-  // 자동 넘김 (이미지가 2장 이상일 때만)
-  const active = visible && shouldShow && itemCount > 1;
+  // 자동 넘김 (이미지가 2장 이상일 때만, 사용자가 드래그 중이면 정지)
+  const active = visible && shouldShow && itemCount > 1 && !isDragging;
   useEffect(() => {
     if (!active) return;
     const timer = setInterval(() => {
@@ -68,6 +70,7 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
     (event: { nativeEvent: { contentOffset: { x: number } } }) => {
       const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
       indexRef.current = Math.max(0, Math.min(index, itemCount - 1));
+      setIsDragging(false);
     },
     [pageWidth, itemCount]
   );
@@ -93,6 +96,7 @@ const PopupModal: React.FC<PopupModalProps> = ({ visible, onClose, data, handleU
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, index) => String(index)}
               getItemLayout={(_, index) => ({ length: pageWidth, offset: pageWidth * index, index })}
+              onScrollBeginDrag={() => setIsDragging(true)}
               onMomentumScrollEnd={onMomentumScrollEnd}
               renderItem={({ item }) => (
                 <Pressable
