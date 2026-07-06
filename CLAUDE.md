@@ -58,6 +58,11 @@ npm run test:ios       # eas build -p ios --profile preview
 - `fixBarStore.ts` - FixBar 표시 제어
 - `showToggleIconsStore.ts` - 토글 아이콘 표시 여부
 
+### 공통 프로바이더/컨텍스트
+- `components/SetupProvider.tsx` - QueryClient + Theme + UpdateProvider 스택 (양 플랫폼 레이아웃 공용)
+- `components/UpdateContext.ts` - OTA 업데이트 Context (UpdateProvider ↔ ForceUpdateModal 순환 참조 방지용 분리)
+- `hooks/useColdStartNotification.ts` - 종료 상태에서 알림 탭 진입 처리 (양 플랫폼 공용)
+
 ### 데이터 페칭
 - **TanStack React Query** 사용 (5분 refetch interval)
 - API 클라이언트 (`api/client.ts`)는 Axios 사용
@@ -141,7 +146,10 @@ logger.log("개발 환경에서만 출력");
 - `.specify/memory/` - 프로젝트 컨스티튜션
 
 ## 기술 스택
-- TypeScript 5.9+, React 19, React Native 0.81, Expo SDK 54
+- TypeScript 6.0, React 19.2, React Native 0.85, Expo SDK 56
 - Zustand (상태 관리), TanStack React Query (데이터 페칭)
 - expo-updates, expo-notifications, expo-device, expo-task-manager
 - AsyncStorage (토큰 캐싱), crypto-es (암호화)
+- 빌드 기준: Android compileSdk/targetSdk 36 (minSdk 24), iOS 배포 타깃 16.4 (Xcode 26+)
+- 주의: expo-router 56은 React Navigation을 포크함 — `@react-navigation/*` 직접 import 금지, `expo-router`에서 재수출된 심볼(DefaultTheme, ThemeProvider, useRoute 등) 사용
+- 주의: reanimated 4 + worklets 환경에서 reanimated-carousel은 비호환이라 제거됨 — PopupModal은 FlatList 페이저 사용
