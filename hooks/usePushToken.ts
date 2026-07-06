@@ -19,29 +19,34 @@ export function usePushToken() {
   const { isLoggedIn, user } = useAuthStore();
 
   const previousTokenRef = useRef<string | null>(null);
-  // undefined = 아직 한 번도 동기화되지 않음 (첫 마운트 감지용 센티널)
-  const previousUserIdRef = useRef<string | null | undefined>(undefined);
+  // 서버에 등록된 것으로 확인된 userId 매핑 (undefined = 아직 등록 확인 전)
+  // register/saveRegistrationStatus 시점에 기록되어, 등록 완료 전 로그인이
+  // 일어나도 동기화 effect가 차이를 감지해 updateUserId를 수행한다
+  const registeredUserIdRef = useRef<string | null | undefined>(undefined);
 
   /**
    * 토큰이 이미 등록되었는지 확인
    * 24시간 이내에 등록된 경우에만 true 반환 (주기적 재등록)
    */
-  const checkIfRegistered = useCallback(async (token: string): Promise<boolean> => {
-    try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        const isTokenMatch = data.token === token;
-        // 24시간(86400000ms) 이내에 등록된 경우에만 스킵
-        const registeredAt = data.registeredAt || 0;
-        const isRecent = Date.now() - registeredAt < 86400000;
-        return isTokenMatch && isRecent;
+  const checkIfRegistered = useCallback(
+    async (token: string): Promise<{ isRegistered: boolean; storedUserId: string | null }> => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const data = JSON.parse(stored);
+          const isTokenMatch = data.token === token;
+          // 24시간(86400000ms) 이내에 등록된 경우에만 스킵
+          const registeredAt = data.registeredAt || 0;
+          const isRecent = Date.now() - registeredAt < 86400000;
+          return { isRegistered: isTokenMatch && isRecent, storedUserId: data.userId ?? null };
+        }
+        return { isRegistered: false, storedUserId: null };
+      } catch {
+        return { isRegistered: false, storedUserId: null };
       }
-      return false;
-    } catch {
-      return false;
-    }
-  }, []);
+    },
+    []
+  );
 
   /**
    * 등록 상태 저장
@@ -49,6 +54,7 @@ export function usePushToken() {
   const saveRegistrationStatus = useCallback(
     async (token: string, userId: string | null) => {
       try {
+        registeredUserIdRef.current = userId;
         await AsyncStorage.setItem(
           STORAGE_KEY,
           JSON.stringify({ token, userId, registeredAt: Date.now() })
@@ -67,9 +73,10 @@ export function usePushToken() {
   const register = useCallback(
     async (token: string, userId?: string | null) => {
       // 이미 등록된 토큰인지 확인
-      const alreadyRegistered = await checkIfRegistered(token);
-      if (alreadyRegistered && !userId) {
+      const { isRegistered, storedUserId } = await checkIfRegistered(token);
+      if (isRegistered && !userId) {
         logger.log("Token already registered, skipping");
+        registeredUserIdRef.current = storedUserId;
         setTokenRegistered(true);
         return;
       }
@@ -118,15 +125,11 @@ export function usePushToken() {
 
     const currentUserId = user?.UserId || null;
 
-    // userId가 변경된 경우에만 업데이트
-    if (previousUserIdRef.current !== currentUserId) {
-      const prevUserId = previousUserIdRef.current;
-      previousUserIdRef.current = currentUserId;
-
-      // 첫 마운트 시에는 업데이트 스킵 (등록 시 이미 userId 포함)
-      if (prevUserId !== undefined) {
-        updateUserId(expoPushToken, currentUserId);
-      }
+    // 서버에 등록된 userId와 다른 경우에만 업데이트
+    // (undefined = 등록 확인 전 → updateToken이 서버에 토큰 없으면 재등록으로 폴백하므로 안전)
+    if (registeredUserIdRef.current !== currentUserId) {
+      registeredUserIdRef.current = currentUserId;
+      updateUserId(expoPushToken, currentUserId);
     }
   }, [expoPushToken, isTokenRegistered, user?.UserId, isLoggedIn, updateUserId]);
 
