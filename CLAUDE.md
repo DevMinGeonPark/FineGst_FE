@@ -146,10 +146,10 @@ logger.log("개발 환경에서만 출력");
 - `.specify/memory/` - 프로젝트 컨스티튜션
 
 ## 기술 스택
-- TypeScript 6.0, React 19.2, React Native 0.85, Expo SDK 56
+- TypeScript 6.0, React 19.2, React Native 0.86, Expo SDK 57
 - Zustand (상태 관리), TanStack React Query (데이터 페칭)
 - expo-updates, expo-notifications, expo-device, expo-task-manager
 - AsyncStorage (토큰 캐싱), crypto-es (암호화)
 - 빌드 기준: Android compileSdk/targetSdk 36 (minSdk 24), iOS 배포 타깃 16.4 (Xcode 26+)
-- 주의: expo-router 56은 React Navigation을 포크함 — `@react-navigation/*` 직접 import 금지, `expo-router`에서 재수출된 심볼(DefaultTheme, ThemeProvider, useRoute 등) 사용
+- 주의: expo-router 56+는 React Navigation을 포크함 — `@react-navigation/*` 직접 import 금지, `expo-router`에서 재수출된 심볼(DefaultTheme, ThemeProvider, useRoute 등) 사용
 - 주의: reanimated 4 + worklets 환경에서 reanimated-carousel은 비호환이라 제거됨 — PopupModal은 FlatList 페이저 사용
