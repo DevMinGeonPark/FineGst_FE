@@ -2,7 +2,7 @@
   "expo": {
     "name": "(주) 화인지에스티",
     "slug": "finegstApp",
-    "version": "10.0.0",
+    "version": "11.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "finegstapp",
