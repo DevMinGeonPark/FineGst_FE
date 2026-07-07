@@ -8,7 +8,7 @@
     "scheme": "finegstapp",
     "userInterfaceStyle": "automatic",
     "runtimeVersion": {
-      "policy": "fingerprint"
+      "policy": "appVersion"
     },
     "updates": {
       "enabled": true,
