@@ -50,6 +50,9 @@
       "android": {
         "serviceAccountKeyPath": "./keys/finegst-68c9e08c4e44.json",
         "track": "production"
+      },
+      "ios": {
+        "ascAppId": "6468455648"
       }
     }
   }
