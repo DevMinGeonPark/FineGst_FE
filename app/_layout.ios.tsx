@@ -90,8 +90,8 @@ function AppMainApp() {
 }
 
 // 웹 메인 컴포넌트
-function WebMainApp() {
-  return <WebMainIos />;
+function WebMainApp({ suppressPopup }: { suppressPopup: boolean }) {
+  return <WebMainIos suppressPopup={suppressPopup} />;
 }
 
 export default function RootLayout() {
@@ -141,7 +141,7 @@ export default function RootLayout() {
           <AppMainApp />
         </View>
         <View style={{ ...StyleSheet.absoluteFill, opacity: isLoading ? 0 : useAppView ? 0 : 1, zIndex: useAppView ? 0 : 1 }} pointerEvents={useAppView ? "none" : "auto"}>
-          <WebMainApp />
+          <WebMainApp suppressPopup={useAppView || isLoading} />
         </View>
       </View>
     </SetupProvider>

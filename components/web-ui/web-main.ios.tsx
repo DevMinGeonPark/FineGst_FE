@@ -7,7 +7,12 @@ import { useWebView } from "../../hooks/useWebView";
 import { usePopupModalState } from "../../hooks/usePopupModalState";
 import { CommonWebView } from "./CommonWebView";
 
-export default function WebMain() {
+interface WebMainProps {
+  // 앱뷰가 화면을 덮고 있을 때 팝업 억제 (iOS는 앱뷰/웹뷰 동시 렌더 구조라 Modal이 opacity를 무시하고 뜸)
+  suppressPopup?: boolean;
+}
+
+export default function WebMain({ suppressPopup = false }: WebMainProps) {
   const { webViewRef, uri, currentUrl, handleUri, onNavigationStateChange, handleWebViewMessage, onShouldStartLoadWithRequest } = useWebView();
 
   const { modal, closeModal, popupData, defaultPopupData } = usePopupModalState();
@@ -29,7 +34,7 @@ export default function WebMain() {
         />
       </View>
 
-      <PopupModal visible={modal} onClose={closeModal} showCloseButton={true} handleUri={handleUri} data={popupData || defaultPopupData} />
+      <PopupModal visible={modal && !suppressPopup} onClose={closeModal} showCloseButton={true} handleUri={handleUri} data={popupData || defaultPopupData} />
 
       {isToggleShow && <ToggleIcons />}
     </SafeAreaView>
