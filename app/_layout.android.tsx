@@ -4,7 +4,6 @@ import "react-native-reanimated";
 import { useState, useEffect } from "react";
 import { compareVersions } from "../utils/versionChecker";
 import UpdateModal from "../components/app-ui/modules/UpdateModal";
-import NetworkErrorModal from "../components/app-ui/modules/NetworkErrorModal";
 import WebMainAndroid from "../components/web-ui/web-main.android";
 import { SetupProvider } from "../components/SetupProvider";
 import { useColdStartNotification } from "../hooks/useColdStartNotification";
@@ -16,14 +15,12 @@ SplashScreen.preventAutoHideAsync();
 // 타입 정의
 interface AppState {
   updateModal: boolean;
-  networkErrorModal: boolean;
 }
 
 // 앱 초기화 커스텀 훅
 function useAppInitialization() {
   const [appState, setAppState] = useState<AppState>({
     updateModal: false,
-    networkErrorModal: false,
   });
 
   const initializeApp = async () => {
@@ -31,29 +28,18 @@ function useAppInitialization() {
       // 1. 버전 체크 (5초 타임아웃 적용)
       const versionResult = await compareVersions();
 
-      // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
-      if (versionResult.isTimeout) {
-        setAppState({ updateModal: false, networkErrorModal: false });
-        return;
-      }
-
-      if (versionResult.isNetworkError) {
-        // 네트워크 에러 발생 시
-        setAppState((prev) => ({ ...prev, networkErrorModal: true }));
-        return;
-      }
-
       if (versionResult.needsUpdate) {
         // 업데이트 필요 시
-        setAppState((prev) => ({ ...prev, updateModal: true }));
+        setAppState({ updateModal: true });
         return;
       }
 
-      // 정상 진입
-      setAppState({ updateModal: false, networkErrorModal: false });
+      // 타임아웃/네트워크 에러 포함 정상 진입 (다음 실행 시 다시 체크)
+      // 메인 분기는 웹뷰이므로 버전 체크 API 실패로 앱 진입을 막지 않음 — 실제 오프라인이면 웹뷰 자체 에러 UI가 처리
+      setAppState({ updateModal: false });
     } catch {
       // 버전 체크 실패 시 앱 정상 진입
-      setAppState({ updateModal: false, networkErrorModal: false });
+      setAppState({ updateModal: false });
     }
   };
 
@@ -63,12 +49,7 @@ function useAppInitialization() {
     initializeApp();
   }, []);
 
-  const retry = () => {
-    setAppState({ updateModal: false, networkErrorModal: false });
-    initializeApp();
-  };
-
-  return { appState, retry };
+  return { appState };
 }
 
 // 웹 메인 컴포넌트
@@ -81,12 +62,10 @@ function WebMainApp() {
 }
 
 // 조건부 렌더링 컴포넌트
-function AppRenderer({ appState, onRetry }: { appState: AppState; onRetry: () => void }) {
-  const { updateModal, networkErrorModal } = appState;
+function AppRenderer({ appState }: { appState: AppState }) {
+  const { updateModal } = appState;
 
-  if (networkErrorModal) {
-    return <NetworkErrorModal onRetry={onRetry} />;
-  } else if (updateModal) {
+  if (updateModal) {
     return <UpdateModal />;
   } else {
     return <WebMainApp />;
@@ -98,7 +77,7 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  const { appState, retry } = useAppInitialization();
+  const { appState } = useAppInitialization();
 
   // 푸시 알림 초기화: 권한 요청 및 토큰 생성
   useNotifications();
@@ -120,5 +99,5 @@ export default function RootLayout() {
     return null;
   }
 
-  return <AppRenderer appState={appState} onRetry={retry} />;
+  return <AppRenderer appState={appState} />;
 }
