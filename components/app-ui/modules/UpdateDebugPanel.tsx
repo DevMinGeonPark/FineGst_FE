@@ -4,9 +4,11 @@ import Constants from "expo-constants";
 import { useUpdate } from "../../UpdateContext";
 
 /**
- * OTA 업데이트 디버그 패널 (QA용)
- * - 우하단 버전 텍스트를 길게 누르면 업데이트 정보 모달 표시
- * - 개발 빌드 또는 preview 채널에서만 렌더링 (프로덕션에서는 null)
+ * OTA 업데이트 버전 표시 + 디버그 패널
+ * - 좌하단 소형 텍스트로 앱 버전 · 실행 중인 업데이트 ID 앞 8자리 표시 (프로덕션 포함)
+ *   → 사용자 응대 시 이 8자리로 어떤 OTA가 적용된 상태인지 구분
+ *   → 우하단은 웹 콘텐츠의 카카오톡/전화 플로팅 버튼과 겹쳐 터치를 가로채므로 좌하단 고정
+ * - 길게 누르면 업데이트 정보 모달 표시
  * - update context 구독을 이 컴포넌트로 격리해 다운로드 진행률 tick이
  *   WebView 화면 전체를 리렌더하지 않도록 한다
  */
@@ -24,13 +26,9 @@ export const UpdateDebugPanel: React.FC = () => {
 
   const channel = currentlyRunning?.channel;
 
-  // 프로덕션 노출 차단 (버전 텍스트가 웹 콘텐츠 우하단 터치를 가로채는 문제 포함)
-  if (!__DEV__ && channel !== "preview") {
-    return null;
-  }
-
   const appVersion = Constants.expoConfig?.version || "1.0.0";
   const updateId = currentlyRunning?.updateId;
+  const updateIdShort = updateId ? updateId.slice(0, 8) : "번들";
   const runtimeVersion = currentlyRunning?.runtimeVersion;
   const isEmbeddedLaunch = currentlyRunning?.isEmbeddedLaunch;
   const isEmergencyLaunch = currentlyRunning?.isEmergencyLaunch;
@@ -44,9 +42,9 @@ export const UpdateDebugPanel: React.FC = () => {
 
   return (
     <>
-      {/* 버전 텍스트 (길게 누르면 디버그 패널) */}
-      <Pressable onLongPress={() => setShowDebugPanel(true)} delayLongPress={500}>
-        <Text style={styles.versionText}>v{appVersion}</Text>
+      {/* 버전 · 업데이트 ID 텍스트 (길게 누르면 디버그 패널) */}
+      <Pressable style={styles.versionBadge} onLongPress={() => setShowDebugPanel(true)} delayLongPress={500}>
+        <Text style={styles.versionText}>{`v${appVersion} · ${updateIdShort}`}</Text>
       </Pressable>
 
       {/* 디버그 패널 모달 */}
@@ -126,12 +124,14 @@ export const UpdateDebugPanel: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  versionText: {
+  versionBadge: {
     position: "absolute",
     bottom: 4,
-    right: 8,
+    left: 8,
+  },
+  versionText: {
     fontSize: 10,
-    color: "rgba(0, 0, 0, 0.2)",
+    color: "rgba(0, 0, 0, 0.25)",
   },
   debugOverlay: {
     flex: 1,

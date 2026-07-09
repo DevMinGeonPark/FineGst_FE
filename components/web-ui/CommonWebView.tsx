@@ -325,7 +325,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
     <View style={{ flex: 1 }}>
       <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />
 
-      {/* OTA 디버그 패널 (dev/preview 빌드에서만 렌더링) */}
+      {/* 좌하단 버전·업데이트 ID 표시 + 길게 눌러 OTA 디버그 패널 */}
       <UpdateDebugPanel />
     </View>
   );
