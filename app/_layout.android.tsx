@@ -1,5 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { SplashScreen } from "expo-router";
 import { useFonts } from "expo-font";
 import "react-native-reanimated";
 import { useState, useEffect } from "react";
@@ -7,10 +6,10 @@ import { compareVersions } from "../utils/versionChecker";
 import UpdateModal from "../components/app-ui/modules/UpdateModal";
 import NetworkErrorModal from "../components/app-ui/modules/NetworkErrorModal";
 import WebMainAndroid from "../components/web-ui/web-main.android";
-import { SplashScreen, Stack } from "expo-router";
-
-// 테스트용: true로 설정하면 네이티브 앱뷰로 진입 (iOS 심사용)
-const USE_APP_VIEW = true;
+import { SetupProvider } from "../components/SetupProvider";
+import { useColdStartNotification } from "../hooks/useColdStartNotification";
+import { useNotifications } from "../hooks/useNotifications";
+import { usePushToken } from "../hooks/usePushToken";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,28 +19,6 @@ interface AppState {
   networkErrorModal: boolean;
 }
 
-interface SetupProviderProps {
-  children: React.ReactNode;
-}
-
-// QueryClient 인스턴스
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchInterval: 1000 * 60 * 5,
-    },
-  },
-});
-
-// 프로바이더 컴포넌트
-function SetupProvider({ children }: SetupProviderProps) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={DefaultTheme}>{children}</ThemeProvider>
-    </QueryClientProvider>
-  );
-}
-
 // 앱 초기화 커스텀 훅
 function useAppInitialization() {
   const [appState, setAppState] = useState<AppState>({
@@ -49,37 +26,49 @@ function useAppInitialization() {
     networkErrorModal: false,
   });
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // 1. 버전 체크 (5초 타임아웃 적용)
-        const versionResult = await compareVersions();
+  const initializeApp = async () => {
+    try {
+      // 1. 버전 체크 (5초 타임아웃 적용)
+      const versionResult = await compareVersions();
 
-        // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
-        if (versionResult.isTimeout) {
-          return;
-        }
-
-        if (versionResult.isNetworkError) {
-          // 네트워크 에러 발생 시
-          setAppState((prev) => ({ ...prev, networkErrorModal: true }));
-          return;
-        }
-
-        if (versionResult.needsUpdate) {
-          // 업데이트 필요 시
-          setAppState((prev) => ({ ...prev, updateModal: true }));
-          return;
-        }
-      } catch {
-        // 버전 체크 실패 시 앱 정상 진입
+      // 타임아웃 시 앱 정상 진입 (다음 실행 시 다시 체크)
+      if (versionResult.isTimeout) {
+        setAppState({ updateModal: false, networkErrorModal: false });
+        return;
       }
-    };
 
+      if (versionResult.isNetworkError) {
+        // 네트워크 에러 발생 시
+        setAppState((prev) => ({ ...prev, networkErrorModal: true }));
+        return;
+      }
+
+      if (versionResult.needsUpdate) {
+        // 업데이트 필요 시
+        setAppState((prev) => ({ ...prev, updateModal: true }));
+        return;
+      }
+
+      // 정상 진입
+      setAppState({ updateModal: false, networkErrorModal: false });
+    } catch {
+      // 버전 체크 실패 시 앱 정상 진입
+      setAppState({ updateModal: false, networkErrorModal: false });
+    }
+  };
+
+  useEffect(() => {
+    // 마운트 시 1회 비동기 초기화 — setState는 모두 await 이후에 발생 (SDK 56 lint 대응, 동작 변경 없음)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeApp();
   }, []);
 
-  return appState;
+  const retry = () => {
+    setAppState({ updateModal: false, networkErrorModal: false });
+    initializeApp();
+  };
+
+  return { appState, retry };
 }
 
 // 웹 메인 컴포넌트
@@ -92,11 +81,11 @@ function WebMainApp() {
 }
 
 // 조건부 렌더링 컴포넌트
-function AppRenderer({ appState }: { appState: AppState }) {
+function AppRenderer({ appState, onRetry }: { appState: AppState; onRetry: () => void }) {
   const { updateModal, networkErrorModal } = appState;
 
   if (networkErrorModal) {
-    return <NetworkErrorModal />;
+    return <NetworkErrorModal onRetry={onRetry} />;
   } else if (updateModal) {
     return <UpdateModal />;
   } else {
@@ -105,32 +94,31 @@ function AppRenderer({ appState }: { appState: AppState }) {
 }
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
+  const [loaded, fontError] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  const appState = useAppInitialization();
+  const { appState, retry } = useAppInitialization();
+
+  // 푸시 알림 초기화: 권한 요청 및 토큰 생성
+  useNotifications();
+  // 푸시 토큰 서버 등록
+  usePushToken();
+
+  // Cold start: 앱이 종료된 상태에서 알림을 탭하여 실행된 경우 처리
+  useColdStartNotification();
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (loaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore if splash screen is already hidden or unavailable.
+      });
     }
-  }, [loaded]);
+  }, [loaded, fontError]);
 
-  if (!loaded) {
+  if (!loaded && !fontError) {
     return null;
   }
 
-  // 네이티브 앱뷰 모드: expo-router가 전체 네비게이션 관리
-  if (USE_APP_VIEW) {
-    return (
-      <SetupProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(app)" />
-        </Stack>
-      </SetupProvider>
-    );
-  }
-
-  return <AppRenderer appState={appState} />;
+  return <AppRenderer appState={appState} onRetry={retry} />;
 }

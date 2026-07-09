@@ -68,33 +68,40 @@ const buildFullUrl = (baseURL?: string, url?: string) => {
   return `${baseURL.replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
 };
 
-// TODO: 필요할 때 주석을 해제해서 에러 상세 로그를 확인하세요.
-// client.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     const config = error?.config;
-//     const response = error?.response;
-//     const headers = sanitizeValue(normalizeHeaders(config?.headers));
-//     const params = sanitizeValue(config?.params);
-//     const data = sanitizeValue(parseJsonIfPossible(config?.data));
-//     const responseData = sanitizeValue(response?.data);
-//
-//     logger.error("API Error", {
-//       message: error?.message,
-//       method: config?.method?.toUpperCase(),
-//       url: buildFullUrl(config?.baseURL, config?.url),
-//       baseURL: config?.baseURL,
-//       headers,
-//       params,
-//       data,
-//       status: response?.status,
-//       statusText: response?.statusText,
-//       response: responseData,
-//     });
-//
-//     return Promise.reject(error);
-//   }
-// );
+// API 응답/에러 로깅 (디버깅용)
+client.interceptors.response.use(
+  (response) => {
+    logger.log("API Response", {
+      url: buildFullUrl(response.config?.baseURL, response.config?.url),
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
+  (error) => {
+    const config = error?.config;
+    const response = error?.response;
+    const headers = sanitizeValue(normalizeHeaders(config?.headers));
+    const params = sanitizeValue(config?.params);
+    const data = sanitizeValue(parseJsonIfPossible(config?.data));
+    const responseData = sanitizeValue(response?.data);
+
+    logger.error("API Error", {
+      message: error?.message,
+      method: config?.method?.toUpperCase(),
+      url: buildFullUrl(config?.baseURL, config?.url),
+      baseURL: config?.baseURL,
+      headers,
+      params,
+      data,
+      status: response?.status,
+      statusText: response?.statusText,
+      response: responseData,
+    });
+
+    return Promise.reject(error);
+  }
+);
 
 // Set initial common headers
 client.defaults.headers.common["Content-Type"] = "application/json";

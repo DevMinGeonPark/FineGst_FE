@@ -47,7 +47,7 @@ export interface MachineCalResType extends CommonCalResType {
   ChgSubsidy: number;
 
   /** 추가 지원금 */
-  ChgSubsidyAdd: any; //에러 제거
+  ChgSubsidyAdd: number | undefined;
 }
 
 export interface ChargeCalResType extends CommonCalResType {

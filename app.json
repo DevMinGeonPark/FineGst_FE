@@ -2,12 +2,20 @@
   "expo": {
     "name": "(주) 화인지에스티",
     "slug": "finegstApp",
-    "version": "9.0.0",
+    "version": "11.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "finegstapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/98a9da2b-eba2-4045-ae34-cd3f861b4c4c",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "shop.kt-online.www.finegstApp",
@@ -22,17 +30,19 @@
           "mailto",
           "http",
           "https"
+        ],
+        "UIBackgroundModes": [
+          "remote-notification"
         ]
       }
     },
     "android": {
       "package": "com.finegst.mshop",
-      "versionCode": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -58,7 +68,17 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

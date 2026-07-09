@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Platform, Linking, Dimensions, StyleSheet } from "react-native";
 import WebView, { WebViewNavigation } from "react-native-webview";
+import type { WebViewErrorEvent, WebViewHttpErrorEvent } from "react-native-webview/lib/WebViewTypes";
 import { getWebViewOptimizedJavaScript } from "../../utils/webViewOptimizer";
+import { UpdateDebugPanel } from "../app-ui/modules/UpdateDebugPanel";
 
 interface CommonWebViewProps {
   webViewRef: React.RefObject<WebView | null>;
@@ -10,8 +12,8 @@ interface CommonWebViewProps {
   onMessage: (event: { nativeEvent: { data: string } }) => void;
   onShouldStartLoadWithRequest?: (navState: WebViewNavigation) => boolean;
   onContentProcessDidTerminate?: () => void;
-  onHttpError?: (syntheticEvent: any) => void;
-  onError?: (syntheticEvent: any) => void;
+  onHttpError?: (syntheticEvent: WebViewHttpErrorEvent) => void;
+  onError?: (syntheticEvent: WebViewErrorEvent) => void;
   onLoadStart?: () => void;
   onLoadEnd?: () => void;
   onLoadProgress?: ({ nativeEvent }: { nativeEvent: { progress: number } }) => void;
@@ -68,15 +70,35 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   // 외부 링크 처리를 위한 JavaScript
   const externalLinkScript = `
     (function() {
+      // www 유무를 무시한 동일 사이트 판별 (배너 링크가 www 없는 kt-online.shop으로 걸려 있어
+      // 단순 hostname includes 비교로는 외부 링크로 오판됨)
+      function isSameSite(href) {
+        try {
+          const u = new URL(href, window.location.href);
+          if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+          const norm = function(h) { return h.replace(/^www\\./, ''); };
+          return norm(u.hostname) === norm(window.location.hostname);
+        } catch (e) {
+          return false;
+        }
+      }
+
       function handleExternalLinks() {
         const links = document.querySelectorAll('a[href]');
         links.forEach(link => {
           const href = link.getAttribute('href');
           const target = link.getAttribute('target');
-          
+
+          const sameSite = href && isSameSite(href);
+
+          // 동일 사이트인데 target=_blank면 WebView 내에서 열리도록 강제
+          if (sameSite && target === '_blank') {
+            link.setAttribute('target', '_self');
+          }
+
           // 외부 링크 판별
-          const isExternalLink = 
-            href && (
+          const isExternalLink =
+            href && !sameSite && (
               href.includes('pf.kakao.com') ||
               href.includes('kakaotalk://') ||
               href.includes('tel:') ||
@@ -84,18 +106,30 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
               href.includes('maps.app.goo.gl') ||
               href.includes('naver.me') ||
               target === '_blank' ||
-              (href.startsWith('http') && !href.includes(window.location.hostname))
+              href.startsWith('http')
             );
-          
+
           if (isExternalLink) {
+            // 동일 링크에 리스너 중복 부착 방지 (MutationObserver 재실행 대응)
+            if (link.dataset.rnExternalHandled === 'true') {
+              return;
+            }
+            link.dataset.rnExternalHandled = 'true';
+
             link.addEventListener('click', function(e) {
+              // 리스너 부착 이후 페이지 JS가 href를 바꿔치기할 수 있으므로 클릭 시점의 href 사용
+              var currentHref = link.href || href;
+
+              // 같은 사이트로 바뀐 경우 WebView 기본 내비게이션에 맡김
+              if (isSameSite(currentHref)) return;
+
               e.preventDefault();
               e.stopPropagation();
-              
+
               // React Native로 메시지 전송
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'EXTERNAL_LINK',
-                url: href
+                url: currentHref
               }));
             });
           }
@@ -194,7 +228,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
           opacity: webViewLoaded && !isLoading ? 1 : 0,
         }),
     },
-    source: { uri: `${uri}?app_page=1` },
+    source: { uri },
     onNavigationStateChange,
     javaScriptEnabled: true,
     bounces: false,
@@ -248,7 +282,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
   };
 
   const eventHandlers = {
-    onHttpError: (syntheticEvent: any) => {
+    onHttpError: (syntheticEvent: WebViewHttpErrorEvent) => {
       const { nativeEvent } = syntheticEvent;
       // 4xx, 5xx 에러 시 에러 UI 표시
       if (nativeEvent.statusCode >= 400) {
@@ -257,7 +291,7 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
       }
       onHttpError?.(syntheticEvent);
     },
-    onError: (syntheticEvent: any) => {
+    onError: (syntheticEvent: WebViewErrorEvent) => {
       const { nativeEvent } = syntheticEvent;
       setHasError(true);
       // 에러 코드별 메시지 설정
@@ -287,7 +321,14 @@ export const CommonWebView: React.FC<CommonWebViewProps> = ({
     return <ErrorView onRetry={handleRetry} errorMessage={errorMessage} />;
   }
 
-  return <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <WebView key={webViewKey} {...commonProps} {...platformSpecificProps} {...eventHandlers} />
+
+      {/* OTA 디버그 패널 (dev/preview 빌드에서만 렌더링) */}
+      <UpdateDebugPanel />
+    </View>
+  );
 };
 
 // 스타일

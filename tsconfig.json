@@ -9,5 +9,6 @@
       "@/hooks/*": ["./app/hooks/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/actions.json", "env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/actions.json", "env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "supabase"]
 }

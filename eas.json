@@ -7,18 +7,53 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "ENCRYPT_SECRET_KEY": "OSM7w50ck2h3V8svROUrd1LLWAGchuUJ",
+        "BASE_URL": "https://www.kt-online.shop/api/",
+        "WEB_URL": "https://www.kt-online.shop",
+        "SUPABASE_URL": "https://uqzuwwouksrqacjikxph.supabase.co",
+        "SUPABASE_ANON_KEY": "5d96a3e7-8790-45f2-b94c-72481ead87c3"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "ENCRYPT_SECRET_KEY": "OSM7w50ck2h3V8svROUrd1LLWAGchuUJ",
+        "BASE_URL": "https://www.kt-online.shop/api/",
+        "WEB_URL": "https://www.kt-online.shop",
+        "SUPABASE_URL": "https://uqzuwwouksrqacjikxph.supabase.co",
+        "SUPABASE_ANON_KEY": "5d96a3e7-8790-45f2-b94c-72481ead87c3"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "ENCRYPT_SECRET_KEY": "OSM7w50ck2h3V8svROUrd1LLWAGchuUJ",
+        "BASE_URL": "https://www.kt-online.shop/api/",
+        "WEB_URL": "https://www.kt-online.shop",
+        "SUPABASE_URL": "https://uqzuwwouksrqacjikxph.supabase.co",
+        "SUPABASE_ANON_KEY": "5d96a3e7-8790-45f2-b94c-72481ead87c3"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./keys/finegst-68c9e08c4e44.json",
+        "track": "production"
+      },
+      "ios": {
+        "ascAppId": "6468455648"
+      }
+    }
   }
 }

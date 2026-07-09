@@ -1,0 +1,2 @@
+# JWT 검증 비활성화 (Publishable Key 사용)
+verify_jwt = false

@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { View, Alert, Platform } from "react-native";
 import { CommonLayout } from "../../../components/layout/CommonLayout";
 import { WebView } from "react-native-webview";
+import { logger } from "../../../utils/logger";
 
 export default function Register() {
   const injectedJavaScriptOnLoad = `
@@ -148,10 +149,9 @@ export default function Register() {
           break;
         case "confirm":
           Alert.alert("확인", data.message, [
-            { text: "확인", onPress: () => console.log("확인") },
+            { text: "확인" },
             {
               text: "취소",
-              onPress: () => console.log("취소"),
               style: "cancel",
             },
           ]);
@@ -190,11 +190,11 @@ export default function Register() {
             }
             onError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
-              console.error("WebView error: ", nativeEvent);
+              logger.error("WebView error: ", nativeEvent);
             }}
             onHttpError={(syntheticEvent) => {
               const { nativeEvent } = syntheticEvent;
-              console.error("WebView HTTP error: ", nativeEvent);
+              logger.error("WebView HTTP error: ", nativeEvent);
             }}
           />
         </View>

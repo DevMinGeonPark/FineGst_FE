@@ -4,6 +4,7 @@ import { Linking, BackHandler, Platform, Modal, View, Image, TouchableOpacity, S
 // import SubNotice from "@src/Atomic/UpdateModal/SubNotice";
 // import MainNotice from "@src/Atomic/UpdateModal/MainNotice";
 import { Ionicons } from "@expo/vector-icons";
+import { logger } from "../../../utils/logger";
 
 export default function UpdateModal() {
   const handleExitApp = () => {
@@ -43,7 +44,7 @@ export default function UpdateModal() {
                 Platform.OS === "android"
                   ? (url = "https://play.google.com/store/apps/details?id=com.finegst.mshop&hl=ko")
                   : (url = "https://apps.apple.com/ph/app/%EC%A3%BC-%ED%99%94%EC%9D%B8%EC%A7%80%EC%97%90%EC%8A%A4%ED%8B%B0/id6468455648");
-                Linking.openURL(url).catch((err) => console.error("Could not open the store page.", err));
+                Linking.openURL(url).catch((err) => logger.error("Could not open the store page.", err));
               }}
             >
               <Text style={{ fontSize: 15, color: "white" }}>지금 업데이트</Text>

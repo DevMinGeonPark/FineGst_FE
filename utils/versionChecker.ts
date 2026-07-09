@@ -5,8 +5,8 @@ import logger from "./logger";
 const VERSION_CHECK_TIMEOUT = 5000; // 5초 타임아웃
 
 export interface VersionCheckResult {
-  shopMajorVersion: string | undefined;
-  localMajorVersion: string;
+  shopVersion: string | undefined;
+  localVersion: string;
   isNetworkError: boolean;
   isTimeout: boolean;
   needsUpdate: boolean;
@@ -23,21 +23,37 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * 샵의 메이저 버전을 가져오는 함수
- * @returns 샵의 메이저 버전 (예: "5") 또는 undefined (네트워크 에러 시)
+ * 서버 버전이 로컬 버전보다 높은지 세그먼트 단위로 비교하는 함수
+ * (예: "11.0.0" > "10.1.0" → true, "10.1.0" > "10.1.0" → false)
+ * 서버 버전이 로컬보다 낮은 경우(스토어 심사 중 등)에는 업데이트를 띄우지 않음
  */
-export async function checkShopMajorVersion(): Promise<string | undefined> {
+function isNewerVersion(server: string, local: string): boolean {
+  const serverParts = server.split(".").map((n) => parseInt(n, 10) || 0);
+  const localParts = local.split(".").map((n) => parseInt(n, 10) || 0);
+  const length = Math.max(serverParts.length, localParts.length);
+  for (let i = 0; i < length; i++) {
+    const s = serverParts[i] ?? 0;
+    const l = localParts[i] ?? 0;
+    if (s !== l) return s > l;
+  }
+  return false;
+}
+
+/**
+ * 샵의 버전을 가져오는 함수
+ * @returns 샵의 전체 버전 (예: "10.1.0") 또는 undefined (네트워크 에러 시)
+ */
+export async function checkShopVersion(): Promise<string | undefined> {
   try {
-    const { ShopVersion } = await getShopVersion(); // ShopVersion 예시: "5.0.15"
+    const { ShopVersion } = await getShopVersion(); // ShopVersion 예시: "10.1.0"
     if (!ShopVersion) {
       // ShopVersion이 undefined면 네트워크 에러로 간주
       logger.log("샵 버전이 undefined입니다. 네트워크 에러로 간주합니다.");
       return undefined;
     }
-    const majorVersion = ShopVersion.split(".")[0]; // '5.0.15'을 '.'으로 분리하고 첫 번째 요소(메이저 버전)를 가져옵니다.
 
-    logger.log(`메이저 버전은 ${majorVersion}입니다.`);
-    return majorVersion;
+    logger.log(`샵 버전은 ${ShopVersion}입니다.`);
+    return ShopVersion;
   } catch (error) {
     logger.log("샵 버전을 가져오는 데 실패했습니다.", error);
     return undefined;
@@ -46,18 +62,19 @@ export async function checkShopMajorVersion(): Promise<string | undefined> {
 
 /**
  * 로컬 버전과 샵 버전을 비교하는 함수
+ * 샵 버전이 로컬 버전보다 높을 때만 업데이트 필요로 판단
  * @returns VersionCheckResult 객체
  */
 export async function compareVersions(): Promise<VersionCheckResult> {
-  const localMajorVersion = LOCAL_VERSION.split(".")[0];
+  const localVersion = LOCAL_VERSION;
 
-  let shopMajorVersion: string | undefined;
+  let shopVersion: string | undefined;
   let isTimeout = false;
   let isNetworkError = false;
 
   try {
-    shopMajorVersion = await withTimeout(checkShopMajorVersion(), VERSION_CHECK_TIMEOUT);
-    isNetworkError = !shopMajorVersion;
+    shopVersion = await withTimeout(checkShopVersion(), VERSION_CHECK_TIMEOUT);
+    isNetworkError = !shopVersion;
   } catch (error) {
     if (error instanceof Error && error.message === "TIMEOUT") {
       logger.log("버전 체크 타임아웃 - 기본값으로 앱 진입");
@@ -68,32 +85,23 @@ export async function compareVersions(): Promise<VersionCheckResult> {
     }
   }
 
-  const needsUpdate = shopMajorVersion !== undefined && shopMajorVersion !== localMajorVersion;
+  const needsUpdate = shopVersion !== undefined && isNewerVersion(shopVersion, localVersion);
 
   if (isTimeout) {
     logger.log("타임아웃으로 인해 버전 비교를 건너뜁니다.");
   } else if (isNetworkError) {
     logger.log("네트워크 에러로 인해 버전 비교를 할 수 없습니다.");
   } else if (needsUpdate) {
-    logger.log(`APP: 두 메이저 버전이 다릅니다. 업데이트가 필요합니다.`);
+    logger.log(`APP: 샵 버전(${shopVersion})이 로컬 버전(${localVersion})보다 높습니다. 업데이트가 필요합니다.`);
   } else {
-    logger.log(`APP: 두 메이저 버전이 같습니다.`);
+    logger.log(`APP: 업데이트가 필요하지 않습니다. (샵: ${shopVersion}, 로컬: ${localVersion})`);
   }
 
   return {
-    shopMajorVersion,
-    localMajorVersion,
+    shopVersion,
+    localVersion,
     isNetworkError,
     isTimeout,
     needsUpdate,
   };
-}
-
-/**
- * 버전 문자열에서 메이저 버전을 추출하는 유틸리티 함수
- * @param version 버전 문자열 (예: "5.0.15")
- * @returns 메이저 버전 (예: "5")
- */
-export function extractMajorVersion(version: string): string {
-  return version.split(".")[0];
 }

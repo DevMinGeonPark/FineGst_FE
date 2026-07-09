@@ -1,5 +1,9 @@
 import { ENCRYPT_SECRET_KEY } from "@env";
 import { AES, Utf8, Pkcs7, CBC } from "crypto-es";
+import logger from "./logger";
+
+// 디버깅: 환경 변수 로드 확인
+logger.log("ENCRYPT_SECRET_KEY loaded:", ENCRYPT_SECRET_KEY ? "✓ 존재함" : "✗ 없음");
 
 // 암호화
 export const encrypt = (text: string) => {
