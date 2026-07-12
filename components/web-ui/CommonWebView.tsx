@@ -4,6 +4,7 @@ import WebView, { WebViewNavigation } from "react-native-webview";
 import type { WebViewErrorEvent, WebViewHttpErrorEvent } from "react-native-webview/lib/WebViewTypes";
 import { getWebViewOptimizedJavaScript } from "../../utils/webViewOptimizer";
 import { UpdateDebugPanel } from "../app-ui/modules/UpdateDebugPanel";
+import { VersionTag } from "../app-ui/atomic/VersionTag";
 
 interface CommonWebViewProps {
   webViewRef: React.RefObject<WebView | null>;
@@ -32,6 +33,8 @@ const ErrorView: React.FC<{ onRetry: () => void; errorMessage?: string }> = ({ o
     <TouchableOpacity style={styles.retryButton} onPress={onRetry} activeOpacity={0.7}>
       <Text style={styles.retryButtonText}>다시 시도</Text>
     </TouchableOpacity>
+    {/* 에러 문의 시 실행 중인 버전·OTA 식별용 */}
+    <VersionTag style={{ marginTop: 24 }} />
   </View>
 );
 

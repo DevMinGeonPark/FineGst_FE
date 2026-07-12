@@ -5,6 +5,7 @@ import { Linking, BackHandler, Platform, Modal, View, Image, TouchableOpacity, S
 // import MainNotice from "@src/Atomic/UpdateModal/MainNotice";
 import { Ionicons } from "@expo/vector-icons";
 import { logger } from "../../../utils/logger";
+import { VersionTag } from "../atomic/VersionTag";
 
 export default function UpdateModal() {
   const handleExitApp = () => {
@@ -50,6 +51,8 @@ export default function UpdateModal() {
               <Text style={{ fontSize: 15, color: "white" }}>지금 업데이트</Text>
             </TouchableOpacity>
           </View>
+          {/* 업데이트 안내 문의 시 실행 중인 버전·OTA 식별용 */}
+          <VersionTag style={{ marginTop: 16, alignSelf: "center" }} />
         </View>
       </View>
     </Modal>
